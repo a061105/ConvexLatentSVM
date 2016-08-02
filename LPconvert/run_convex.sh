@@ -1,7 +1,7 @@
 #!/bin/bash
 
-train_data=../SimulatedData/train_doc.40.noise
-test_data=../SimulatedData/test_doc.40.noise
+train_data=../SimulatedData/docs
+test_data=../SimulatedData/docs
 #train_data=../RealData/ChineseOpinion/parsed_docs/state-3.op-as-pos.train
 #test_data=../RealData/ChineseOpinion/parsed_docs/state-3.op-as-pos.test
 
