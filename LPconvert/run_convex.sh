@@ -8,8 +8,8 @@ test_data=../SimulatedData/docs
 
 ./LPconvert $train_data 10 0
 ../LPsparse/LPsparse -e 0.01 -t 0.005 .
-./paste.sh
-./parseToGivenH var_sol
+#./paste.sh
+#./parseToGivenH var_sol
 
-../LatentSVMtrain/latentTrain $train_data 10.0 1 0 var_sol.given_h
-../LatentSVMtrain/predict $test_data model
+#../LatentSVMtrain/latentTrain $train_data 10.0 1 0 var_sol.given_h
+#../LatentSVMtrain/predict $test_data model
