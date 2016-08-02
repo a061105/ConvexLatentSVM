@@ -159,7 +159,7 @@ int main(int argc, char** argv){
 	vector<double> c;
 	
 	// sum_{h} alpha_{j,h} = 1, for all j
-	for(int j=0;j<m;j++){
+	/*for(int j=0;j<m;j++){
 		//if( labels[j] == -1 )
 		//	continue;
 
@@ -172,10 +172,10 @@ int main(int argc, char** argv){
 		beq.push_back(1.0);
 		
 		eqID++;
-	}
+	}*/
 	
 	// sum_{h2} beta_{i,h2} = 1, for i=1...m
-	for(int i=0;i<m;i++){
+	/*for(int i=0;i<m;i++){
 		
 		if( labels[i] == -1 )
 			continue;
@@ -189,7 +189,7 @@ int main(int argc, char** argv){
 		beq.push_back(1.0);
 		
 		eqID++;
-	}
+	}*/
 
 	// sum_{h} sum_{h2} omega_{i,j,h,h2}=1; for all j and i \in \POS
 	for(int i=0;i<m;i++){
@@ -239,7 +239,7 @@ int main(int argc, char** argv){
 	}
 	
 	// omega_{i,j,h,h2} <= alpha_{j,h}
-	for(int i=0;i<m;i++){
+	/*for(int i=0;i<m;i++){
 		if( labels[i]==-1 )
 			continue;
 		cerr << "omega <= alpha, i=" << i << endl;
@@ -257,10 +257,10 @@ int main(int argc, char** argv){
 				}
 			}
 		}
-	}
+	}*/
 
 	// omega_{i,j,h,h2} <= beta_{i,h2}
-	for(int i=0;i<m;i++){
+	/*for(int i=0;i<m;i++){
 		if( labels[i]==-1 )
 			continue;
 		cerr << "omega <= beta, i=" << i << endl;
@@ -278,7 +278,7 @@ int main(int argc, char** argv){
 				}
 			}
 		}
-	}
+	}*/
 	
 	//generate c
 	int n = id_map.size() + m;
@@ -313,7 +313,7 @@ int main(int argc, char** argv){
 		ineqID++;
 	}
 	
-	for(int i=0;i<m;i++){
+	/*for(int i=0;i<m;i++){
 		if( labels[i] == 1 )
 			continue;
 		
@@ -337,7 +337,7 @@ int main(int argc, char** argv){
 			
 			ineqID++;
 		}
-	}
+	}*/
 
 	int m_ineq = ineqID;
 	int m_eq = eqID;
