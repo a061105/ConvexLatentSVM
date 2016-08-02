@@ -6,7 +6,8 @@ using namespace std;
 typedef multimap<double,int, greater<double> > SortKerMap;
 
 const double TOL = 1e-4;
-const double tau = 7.0; //softmax parameter
+const double eta = 5.0;
+const double tau = 5.0; //softmax parameter
 
 const double S = 1.0;
 
@@ -78,25 +79,23 @@ void simplex_ineq_proj( vector<double> v, vector<double>& v_proj, int d ){
 double loss( double z, int y ){
 
 	double tmp = y*z;
-	if( tmp >= 1.0 )
+	if( tmp > 1.0 )
 		return 0.0;
-	else if( tmp <= 0.0 )
-		return 0.5-tmp;
+	else if( tmp <= 1.0-eta )
+		return 1.0-tmp-eta/2.0;
 	else
-		return 0.5*(1.0-tmp)*(1.0-tmp);
+		return 0.5/eta*(1.0-tmp)*(1.0-tmp);
 }
 
 double loss_deriv( double z, int y ){
 
 	double tmp = y*z;
-	if( tmp >= 1.0 )
+	if( tmp > 1.0 )
 		return 0.0;
-	else if( tmp <= 0.0 )
+	else if( tmp <= 1.0-eta )
 		return -y;
 	else
-		return (1-tmp)*(-y);
-
-	return -y*tmp;
+		return (1.0-tmp)*(-y)/eta;
 }
 
 typedef map< pair<int,int>, SparseVec > OmegaActMap;
@@ -296,7 +295,7 @@ class GDMMsolve{
 					
 					//subsolve w.r.t. active set
 					int act_size = omega_ij_act.size();
-					double Qij = act_size*R_sq/lambda/lambda + 2.0*rho;
+					double Qij = eta*act_size*R_sq/lambda/lambda + 2.0*rho;
 					////compute value before proj
 					omega_new.resize( act_size );
 					double min_grad = 1e300;
@@ -515,7 +514,7 @@ class GDMMsolve{
 				//subsolve w.r.t. active set
 				////compute value before proj
 				int act_size = alpha_j_act.size();
-				double Qih2 = rho*num_h_neg + tau*neg_size*R_sq/lambda/lambda*act_size;
+				double Qih2 = rho*num_h_neg + eta*tau*neg_size*R_sq/lambda/lambda*act_size;
 				alpha_new.resize(act_size);
 				for(int r=0;r<act_size;r++){
 					int h2 = alpha_j_act[r].first;
