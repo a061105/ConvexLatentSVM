@@ -13,11 +13,14 @@ def randPos(length):
 
 def add_noise(key_sen, num_noise_char, voc_size):
     T = len(key_sen)
-    key_sen_noise = key_sen
+    key_sen_noise = list(key_sen)
     for i in range(num_noise_char):
         pos = randPos(T)
-        key_sen_noise[pos] = random.randrange(voc_size)
+        key_sen_noise[pos] = str(random.randrange(voc_size))
     return key_sen_noise
+
+
+############# Script Begins Here ################
 
 try:
     num_pos_doc = int(sys.argv[1])
@@ -49,7 +52,8 @@ for i in range(num_doc):
 key_pos = [None]*num_pos_doc;
 for i in range(0,num_pos_doc):
     key_pos[i] = randPos(len(doc))
-    data[i][ key_pos[i] ] = add_noise(key_sen, num_noise_char)
+    data[i][ key_pos[i] ] = add_noise(key_sen, num_noise_char, voc_size)
+    #data[i][ key_pos[i] ] = key_sen
 
 #write key positions
 with open('keypos','w') as fpw:
