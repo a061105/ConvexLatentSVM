@@ -5,11 +5,19 @@ import random
 def randSentence(sen_len, voc_size):
     sen = list()
     for i in range(sen_len):
-        sen.append( str(random.randrange(0,voc_size)) )
+        sen.append( str(random.randrange(voc_size)) )
     return sen
 
 def randPos(length):
-    return random.randrange(0,length)
+    return random.randrange(length)
+
+def add_noise(key_sen, num_noise_char, voc_size):
+    T = len(key_sen)
+    key_sen_noise = key_sen
+    for i in range(num_noise_char):
+        pos = randPos(T)
+        key_sen_noise[pos] = random.randrange(voc_size)
+    return key_sen_noise
 
 try:
     num_pos_doc = int(sys.argv[1])
@@ -17,8 +25,9 @@ try:
     voc_size = int(sys.argv[3])
     doc_len = int(sys.argv[4])
     sen_len = int(sys.argv[5])
+    num_noise_char = int(sys.argv[6])
 except IndexError:
-    print('python3 randDoc [num_pos_doc] [num_neg_doc] [voc_size] [doc_len] [sen_len]');
+    print('python3 randDoc [num_pos_doc] [num_neg_doc] [voc_size] [doc_len] [sen_len] [#noisy_char]');
     exit(0)
 
 num_doc = num_pos_doc + num_neg_doc
@@ -40,7 +49,7 @@ for i in range(num_doc):
 key_pos = [None]*num_pos_doc;
 for i in range(0,num_pos_doc):
     key_pos[i] = randPos(len(doc))
-    data[i][ key_pos[i] ] = key_sen
+    data[i][ key_pos[i] ] = add_noise(key_sen, num_noise_char)
 
 #write key positions
 with open('keypos','w') as fpw:
