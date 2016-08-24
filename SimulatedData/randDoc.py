@@ -37,8 +37,15 @@ for i in range(num_doc):
     data.append(doc)
 
 #motif sentence
+key_pos = [None]*num_pos_doc;
 for i in range(0,num_pos_doc):
-    data[i][ randPos(len(doc)) ] = key_sen
+    key_pos[i] = randPos(len(doc))
+    data[i][ key_pos[i] ] = key_sen
+
+#write key positions
+with open('keypos','w') as fpw:
+    for p in key_pos:
+        fpw.write(str(p)+'\n')
 
 #write to file
 with open('docs','w') as fp:
