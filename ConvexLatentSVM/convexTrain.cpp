@@ -1,13 +1,14 @@
 #include <iostream>
 #include <cmath>
 #include <map>
+#include <omp.h>
 #include "../util.h"
 using namespace std;
 typedef multimap<double,int, greater<double> > SortKerMap;
 
 const double TOL = 1e-4;
 const double eta = 0.1;
-const double tau = 10.0; //softmax parameter
+const double tau = 5; //softmax parameter
 
 const double S = 1.0;
 
@@ -124,6 +125,9 @@ class GDMMsolve{
 	map< int, SparseVec > beta_act;
 	map< int, vector<double> > beta;
 	
+	double train_start_time;
+	double train_end_time;
+
 	GDMMsolve(char* input_file, double _lambda, double _rho){
 		
 		readData(input_file,    documents, labels );
@@ -174,6 +178,8 @@ class GDMMsolve{
 				Phi[i].push_back(feaVect(documents[i][h]));
 		}
 
+		
+		train_start_time = omp_get_wtime();
 		//precompute kernel(i,j,h,h') and sort its value for each i,j
 		R_sq = 0.0;
 		for(int i=0;i<m;i++){
@@ -265,10 +271,10 @@ class GDMMsolve{
 		cerr << "init AL_obj=" << AL_obj() << endl;
 		
 		//Augmented Lagrangian Loop
-		int max_iter = 1000;
+		int max_iter = 500;
 		int iter = 0;
 		vector<double> omega_new, alpha_new, beta_new;
-		while( iter < max_iter ){
+		while( iter <= max_iter ){
 
 			//minimmize w.r.t. omega (using FC-FW)
 			random_shuffle( pos_index.begin(), pos_index.end() );
@@ -565,9 +571,11 @@ class GDMMsolve{
 				}
 			}
 			
-			if(iter%10==0)
-				cerr << "iter=" << iter << ", |A_omega|=" << average_act_size(omega_act) << ", |A_alpha|=" << average_act_size(alpha_act) << ", |A_beta|=" << average_act_size(beta_act) << ", obj=" << objective() << ", p_inf=" << primal_infeas() << endl;
+			if(iter%10==0){
+				train_end_time = omp_get_wtime();
+				cerr << "iter=" << iter << ", |A_omega|=" << average_act_size(omega_act) << ", |A_alpha|=" << average_act_size(alpha_act) << ", |A_beta|=" << average_act_size(beta_act) << ", obj=" << objective() << ", p_inf=" << primal_infeas() << ", traintime=" << train_end_time-train_start_time << endl;
 				//cerr << "iter=" << iter << ", AL=" << AL_obj() << endl;
+			}
 			iter++;
 		}
 	}
