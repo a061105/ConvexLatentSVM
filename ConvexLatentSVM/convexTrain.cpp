@@ -6,8 +6,8 @@ using namespace std;
 typedef multimap<double,int, greater<double> > SortKerMap;
 
 const double TOL = 1e-4;
-const double eta = 0.2;
-const double tau = 5.0; //softmax parameter
+const double eta = 0.1;
+const double tau = 10.0; //softmax parameter
 
 const double S = 1.0;
 
@@ -516,8 +516,8 @@ class GDMMsolve{
 					alpha_new[r] = a_val - grad[h2]/Qih2;
 				}
 				////projection
-				//simplex_ineq_proj( alpha_new, alpha_new, act_size );
-				simplex_proj( alpha_new, alpha_new, act_size );
+				simplex_ineq_proj( alpha_new, alpha_new, act_size );
+				//simplex_proj( alpha_new, alpha_new, act_size );
 				
 				
 				//update alpha and shrink active set (remove those alpha=0)
@@ -560,8 +560,8 @@ class GDMMsolve{
 					int h_h2 = it2->first;
 					int h = h_h2/Tj;
 					int h2 = h_h2 % Tj;
-					mu_ij[h_h2] += max( it2->second - alpha_j[h2] , 0.0);
-					nu_ij[h_h2] += max( it2->second - beta_i[h], 0.0 );
+					mu_ij[h_h2] += 0.1*max( it2->second - alpha_j[h2] , 0.0);
+					nu_ij[h_h2] += 0.1*max( it2->second - beta_i[h], 0.0 );
 				}
 			}
 			
