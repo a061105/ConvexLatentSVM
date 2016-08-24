@@ -1,0 +1,10 @@
+RealData/
+LPconvert/*sol*
+LPconvert/A
+LPconvert/b
+LPconvert/c
+LPconvert/Aeq
+LPconvert/beq
+*tmp*
+*output*
+*~
