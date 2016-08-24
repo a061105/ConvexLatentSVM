@@ -11,5 +11,5 @@ except IndexError:
 with open(inPath) as fpr:
     with open(outPath,'w') as fpw:
         for line in fpr:
-            if line.split()[1] != '0' :
+            if float(line.split()[1]) > 1e-2 :
                 fpw.write(line)
