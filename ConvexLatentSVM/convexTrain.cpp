@@ -6,7 +6,7 @@ using namespace std;
 typedef multimap<double,int, greater<double> > SortKerMap;
 
 const double TOL = 1e-4;
-const double eta = 5.0;
+const double eta = 0.2;
 const double tau = 5.0; //softmax parameter
 
 const double S = 1.0;
@@ -103,6 +103,16 @@ typedef map< pair<int,int>, SparseVec > OmegaActMap;
 class GDMMsolve{
 	
 	public:
+	int m;
+	int pos_size;
+	int neg_size;
+	int num_h_total;
+	int num_h_neg;
+
+	int voc_size;
+	int dim;
+
+	vector<Document> documents;
 	double lambda;
 	double rho;
 	vector<int> labels;
@@ -113,21 +123,22 @@ class GDMMsolve{
 	map< int, vector<double> > alpha;
 	map< int, SparseVec > beta_act;
 	map< int, vector<double> > beta;
-
+	
 	GDMMsolve(char* input_file, double _lambda, double _rho){
 		
 		readData(input_file,    documents, labels );
-		
-		lambda = _lambda;
-		rho = _rho;
-		
 		m = documents.size();
 		voc_size = wordIndMap.size();
-		if( kernel == BOW_kernel )
+		
+		lambda = _lambda*m;
+		rho = _rho/m;
+		
+		if( kernel == BOW_kernel ){
 			dim = voc_size;
-		else if( kernel == PSWM_kernel )
+		}else if( kernel == PSWM_kernel ){
 			dim = voc_size*documents[0][0].size();
-
+		}
+		
 		//collect positive indexes
 		for(int i=0;i<m;i++)
 			if( labels[i] == +1 )
@@ -174,6 +185,7 @@ class GDMMsolve{
 				for(int h=0;h<Ti;h++){
 					for(int h2=0;h2<Tj;h2++){
 						double kv = kernel(documents[i][h], documents[j][h2] );
+						
 						ksortMap.insert(make_pair(kv, h*Tj+h2));
 						kmat.push_back(kv);
 						//cerr << kv << " ";
@@ -220,7 +232,6 @@ class GDMMsolve{
 		smax = (log(smax) + max_val);
 		smax /= tau;
 		
-
 		return smax;
 	}
 	
@@ -283,19 +294,29 @@ class GDMMsolve{
 					//find FW direction
 					double kv;
 					int new_hh2 = -1;
-					for(SortKerMap::iterator it=ksortMap.begin(); it!=ksortMap.end(); it++)
-						if( omega_ij[it->second] == 0.0 && mu_ij[it->second]==0.0 && nu_ij[it->second]==0.0){
-							kv = it->first;
-							new_hh2 = it->second;
-							break;
-						}
-					
+					if( yj==1.0 ){
+					   SortKerMap::iterator it;
+					   for(it=ksortMap.begin(); it!=ksortMap.end(); it++)
+					      if( omega_ij[it->second] == 0.0 && mu_ij[it->second]==0.0 && nu_ij[it->second]==0.0){
+					         kv = it->first;
+						 new_hh2 = it->second;
+						 break;
+					      }
+					}else{ //yj==-1
+					   SortKerMap::reverse_iterator it;
+					   for(it=ksortMap.rbegin(); it!=ksortMap.rend(); it++)
+					      if( omega_ij[it->second] == 0.0 && mu_ij[it->second]==0.0 && nu_ij[it->second]==0.0){
+					         kv = it->first;
+						 new_hh2 = it->second;
+						 break;
+					      }
+					}
 					if( new_hh2!=-1 )
 						omega_ij_act.push_back(make_pair(new_hh2,0.0));
 					
 					//subsolve w.r.t. active set
 					int act_size = omega_ij_act.size();
-					double Qij = eta*act_size*R_sq/lambda/lambda + 2.0*rho;
+					double Qij = (1.0/eta)*act_size*R_sq/lambda/lambda + 2.0*rho;
 					////compute value before proj
 					omega_new.resize( act_size );
 					double min_grad = 1e300;
@@ -306,8 +327,8 @@ class GDMMsolve{
 						int h = o_ind / Tj;
 						int h2 = o_ind % Tj;
 
-						double grad = loss_deriv_i*kmat[ o_ind ]*yj/lambda
-							+ rho*max( o_val-alpha_j[h2]+ mu_ij[o_ind], 0.0 )
+						double grad = loss_deriv_i*kmat[ o_ind ]*yj/lambda 
+							+ rho*max( o_val-alpha_j[h2]+ mu_ij[o_ind], 0.0 ) 
 							+ rho*max( o_val-beta_i[h] + nu_ij[o_ind], 0.0 );
 
 						omega_new[r] = o_val - grad / Qij;
@@ -316,25 +337,16 @@ class GDMMsolve{
 							min_grad = grad;
 						}
 					}
-					//cerr <<"omega_act(2): " ;
-					//print( cerr, omega_new );
 					
 					if( new_hh2!=-1 && argmin != act_size-1 ){
 						omega_ij_act.pop_back();
 						omega_new.pop_back();
 						act_size--;
 					}
-					//cerr <<"omega_act(3): " ;
-					//print( cerr, omega_new );
 					
 					//simplex_ineq_proj( omega_new, omega_new, act_size );
 					simplex_proj( omega_new, omega_new, act_size );
 					
-					/*cerr << "omega: " ;
-					for(int k=0;k<omega_new.size();k++)
-						cerr << omega_new[k] << " ";
-					cerr << endl;
-					*/
 					//maintain response z_i
 					for(int r=0;r<act_size;r++){
 						int o_ind = omega_ij_act[r].first;
@@ -357,12 +369,8 @@ class GDMMsolve{
 					}
 
 					omega_ij_act = omega_ij_act_new;
-					//cerr <<"omega_act(4): " ;
-					//print( cerr, omega_ij_act );
-					
 				}
 			}
-			//cerr << "1" << iter << ", AL=" << AL_obj() << endl;
 			
 			//minimize w.r.t. beta (FC-FW)
 			random_shuffle(pos_index.begin(), pos_index.end());
@@ -414,8 +422,8 @@ class GDMMsolve{
 					beta_new[r] = b_val - grad[h]/Qih;
 				}
 				////projection
-				//simplex_ineq_proj( beta_new, beta_new, act_size );
-				simplex_proj( beta_new, beta_new, act_size );
+				simplex_ineq_proj( beta_new, beta_new, act_size );
+				//simplex_proj( beta_new, beta_new, act_size );
 				
 				//update beta and shrink active set (remove those beta=0)
 				SparseVec beta_i_act_new;
@@ -431,8 +439,6 @@ class GDMMsolve{
 				}
 				beta_i_act = beta_i_act_new;
 			}
-			
-			//cerr << "2" << iter << ", AL=" << AL_obj() << endl;
 			
 			//minimize w.r.t. alpha (FC-FW, needs considering negative examples)
 			random_shuffle( index.begin(), index.end() );
@@ -473,18 +479,6 @@ class GDMMsolve{
 					//compute pred_ih = w*phi(i,h) for all h
 					prob_i.resize(Ti);
 					z[i] = softPredict( w, Phi[i], &prob_i );
-					
-					/*double sum = 0.0;
-					for(int h=0; h<Ti; h++){
-						double pred_ih = dot( w, Phi[i][h] );
-						prob_i[h] = exp(pred_ih);
-						sum += prob_i[h];
-					}
-					for(int h=0;h<Ti;h++)
-						prob_i[h] /= sum;
-					//compute softmax(pred_ih)
-					z[i] = log(sum);
-					*/
 					
 					//evalute loss_deriv_i
 					double loss_deriv_i = loss_deriv( z[i], labels[i] );
@@ -549,9 +543,8 @@ class GDMMsolve{
 				}
 				alpha_act[j] = alpha_j_act_new;
 			}
-
-			//cerr << "3" << iter << ", AL=" << AL_obj() << endl;
-
+			
+			
 			//update dual variables
 			for(OmegaActMap::iterator it=omega_act.begin(); it!=omega_act.end(); it++){
 				int i = it->first.first;
@@ -567,8 +560,8 @@ class GDMMsolve{
 					int h_h2 = it2->first;
 					int h = h_h2/Tj;
 					int h2 = h_h2 % Tj;
-					mu_ij[h_h2] += 0.1*max( it2->second - alpha_j[h2] , 0.0);
-					nu_ij[h_h2] += 0.1*max( it2->second - beta_i[h], 0.0 );
+					mu_ij[h_h2] += max( it2->second - alpha_j[h2] , 0.0);
+					nu_ij[h_h2] += max( it2->second - beta_i[h], 0.0 );
 				}
 			}
 			
@@ -580,17 +573,6 @@ class GDMMsolve{
 	}
 	
 	private:
-	int m;
-	int pos_size;
-	int neg_size;
-	int num_h_total;
-	int num_h_neg;
-	
-
-	int voc_size;
-	int dim;
-
-	vector<Document> documents;
 	vector<int> index;
 	vector<int> pos_index;
 	vector<int> neg_index;
@@ -671,7 +653,7 @@ class GDMMsolve{
 					//cerr << "z[" << i << "]=" << z[i] << endl;
 				}*/
 			}else{
-				z[i] = softPredict(w, Phi[i]);
+				z[i] = softPredict(w, Phi[i]); //not 0
 			}
 		}
 	}
@@ -729,8 +711,10 @@ class GDMMsolve{
 		//sum up
 		double sum = 0.0;
 		for(int i=0;i<m;i++){
+		//for(int i=0;i<pos_size;i++){
 			//cerr << "pred[" << i << "]=" << pred[i] << endl;
-			sum += loss( pred[i], labels[i] );
+			double tmp = loss( pred[i], labels[i] );
+			sum += tmp;
 		}
 
 		return sum;
@@ -813,7 +797,7 @@ int main(int argc, char** argv){
 		char* input_file = argv[1];
 		double lambda = atof(argv[2]);
 		double rho = atof(argv[3]);
-
+		
 		GDMMsolve solver(input_file, lambda, rho);
 		
 		solver.solve();
@@ -827,12 +811,23 @@ int main(int argc, char** argv){
 				for( SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end(); it++)
 					cout << it->first << ":" << it->second << " ";
 				
-				//SparseVec::iterator it = argmax( beta_act_i );
-				//cout << it->first << ":" << it->second;
-				
 				cout << endl;
 			}
 		}
+		
+		/*map<pair<int,int>, SparseVec>& omega_act = solver.omega_act;
+		int num_pos = solver.pos_size;
+		int num = solver.m;
+		int T = solver.documents[0].size();
+		for(int i=0;i<num_pos;i++){
+			for(int j=0;j<num;j++){
+				SparseVec& omega_act_ij = omega_act[make_pair(i,j)];
+				cout << "omega-" << i << "-" << j << "= " ;
+				for( SparseVec::iterator it=omega_act_ij.begin(); it!=omega_act_ij.end(); it++)
+					cout << "(" << (it->first/T) << "," << (it->first%T) << "):" << it->second << " ";
+				cout << endl;
+			}
+		}*/
 		
 		return 0;
 }
