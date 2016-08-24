@@ -302,21 +302,26 @@ class GDMMsolve{
 					int new_hh2 = -1;
 					if( yj==1.0 ){
 					   SortKerMap::iterator it;
-					   for(it=ksortMap.begin(); it!=ksortMap.end(); it++)
+					   for(it=ksortMap.begin(); it!=ksortMap.end(); it++){
 					      if( omega_ij[it->second] == 0.0 && mu_ij[it->second]==0.0 && nu_ij[it->second]==0.0){
 					         kv = it->first;
 						 new_hh2 = it->second;
 						 break;
 					      }
+					   }
+
 					}else{ //yj==-1
 					   SortKerMap::reverse_iterator it;
-					   for(it=ksortMap.rbegin(); it!=ksortMap.rend(); it++)
+					   for(it=ksortMap.rbegin(); it!=ksortMap.rend(); it++){
 					      if( omega_ij[it->second] == 0.0 && mu_ij[it->second]==0.0 && nu_ij[it->second]==0.0){
 					         kv = it->first;
 						 new_hh2 = it->second;
 						 break;
 					      }
+					   }
 					}
+					
+					
 					if( new_hh2!=-1 )
 						omega_ij_act.push_back(make_pair(new_hh2,0.0));
 					
@@ -403,6 +408,7 @@ class GDMMsolve{
 						grad[h] += -max( o_val-beta_i[h]+nu_ij[o_ind] , 0.0 );
 					}
 				}
+
 				for(int h=0;h<Ti;h++)
 					grad[h] *= rho;
 				///find h w/ minimum grad
@@ -416,6 +422,7 @@ class GDMMsolve{
 					}
 				if( beta_i[min_h] == 0.0  )
 					beta_i_act.push_back( make_pair(min_h,0.0) );
+				
 
 				//subsolve w.r.t. active set
 				////compute value before proj

@@ -1,2 +1,2 @@
 all:
-	g++ -O3 -o convexTrain convexTrain.cpp
+	g++ -O3 -fopenmp -o convexTrain convexTrain.cpp
