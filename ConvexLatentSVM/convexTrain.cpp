@@ -8,7 +8,7 @@ typedef multimap<double,int, greater<double> > SortKerMap;
 
 const double TOL = 1e-4;
 const double eta = 0.1;
-const double tau = 5; //softmax parameter
+const double tau = 10; //softmax parameter
 
 const double S = 1.0;
 
@@ -271,7 +271,7 @@ class GDMMsolve{
 		cerr << "init AL_obj=" << AL_obj() << endl;
 		
 		//Augmented Lagrangian Loop
-		int max_iter = 500;
+		int max_iter = 1000;
 		int iter = 0;
 		vector<double> omega_new, alpha_new, beta_new;
 		while( iter <= max_iter ){
@@ -557,7 +557,6 @@ class GDMMsolve{
 				alpha_act[j] = alpha_j_act_new;
 			}
 			
-			
 			//update dual variables
 			for(OmegaActMap::iterator it=omega_act.begin(); it!=omega_act.end(); it++){
 				int i = it->first.first;
@@ -804,31 +803,51 @@ class GDMMsolve{
 	
 int main(int argc, char** argv){
 
-		if( argc < 1+3 ){
-			cerr << "./ConvexTrain [data] [lambda] [rho]"  << endl;
+		if( argc < 1+4 ){
+			cerr << "./ConvexTrain [data] [lambda] [rho] [kernel]"  << endl;
+			cerr << "kernel options:" << endl;
+			cerr << "	0: Bag-of-word" << endl;
+			cerr << "	1: PSWM" << endl;
 			exit(0);
 		}
 
 		char* input_file = argv[1];
 		double lambda = atof(argv[2]);
 		double rho = atof(argv[3]);
+		int kernel_type = atoi(argv[4]);
+		/*if( kernel_type == 0 ){
+			kernel = BOW_kernel;
+			feaVect = BOWfeaVect;
+		}else{
+			kernel = PSWM_kernel;
+			feaVect = PSWMfeaVect;
+		}*/
 		
+
 		GDMMsolve solver(input_file, lambda, rho);
 		
 		solver.solve();
 		
+		ofstream fout("beta_assign");
 		map<int, SparseVec>& beta_act = solver.beta_act;
+		int pos_count=0;
 		for(int i=0;i<solver.labels.size();i++){
 			if( solver.labels[i]==1 ){
 				cout << i << " ";
 				SparseVec& beta_act_i = beta_act[i];
 				sort(beta_act_i.begin(), beta_act_i.end(), PairValueComp());
-				for( SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end(); it++)
+				int k=0;
+				for(SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end() && k<5; it++,k++)
 					cout << it->first << ":" << it->second << " ";
-				
 				cout << endl;
+				//cout << beta_act_i[0].first << ":" << beta_act_i[0].second << " ";
+				//cout << endl;
+				
+				fout << pos_count << " " << beta_act_i[0].first << endl;
+				pos_count++;
 			}
 		}
+		fout.close();
 		
 		/*map<pair<int,int>, SparseVec>& omega_act = solver.omega_act;
 		int num_pos = solver.pos_size;

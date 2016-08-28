@@ -31,7 +31,7 @@ void shuffle( vector<T>& vect ){
 	return sum;
 }*/
 
-void trainSVM(vector<SparseVec>& data, vector<int>& labels, int N, int D, double C,     vector<double>& w){
+void trainSVM(vector<SparseVec>& data, vector<int>& labels, int N, int D, double C, double pos_weight,  vector<double>& w){
 	
 	//initialization
 	vector<double> alpha;
@@ -74,7 +74,7 @@ void trainSVM(vector<SparseVec>& data, vector<int>& labels, int N, int D, double
 			int i = index[r];
 			double yi = (double) labels[i];
 			SparseVec& xi = data[i];
-			double Ci = (yi>0.0)? C*1.0 : C;
+			double Ci = (yi>0.0)? C*pos_weight : C;
 			
 			//1. compute gradient of i 
 			double gi = yi*dot(w,xi) - 1.0;

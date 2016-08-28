@@ -19,8 +19,8 @@ void readGivenH(char* fname, vector<int>& h){
 
 int main(int argc, char** argv){
 	
-	if( argc < 1+4 ){
-		cerr << "./latentSVM [train_doc] [C] [#iter] [fea_option] (given_h)" << endl;
+	if( argc < 1+5 ){
+		cerr << "./latentSVM [train_doc] [C] [#iter] [fea_option] [pos_weight] (given_h)" << endl;
 		cerr << "output: model" << endl;
 		cerr << "feature options:" << endl;
 		cerr << "	0: bag-of-word" << endl;
@@ -32,16 +32,16 @@ int main(int argc, char** argv){
 	double C = atof( argv[2] );
 	int nIter = atoi( argv[3] );
 	int fea_option = atoi( argv[4] );
-
+	double pos_weight = atof( argv[5] );
 	char* given_h_fname = NULL;
-	if( argc >= 1+4 )
-		given_h_fname = argv[5];
-
+	if( argc > 1+5 )
+		given_h_fname = argv[6];
+	
 	srand(time(NULL));
 	vector<Document> docs;
 	vector<int> labels;
 	readData( train_doc_fname, docs, labels );
-
+	
 	/*vector<string> wordMap;
 	wordMap.resize( wordIndMap.size() );
 	for(map<string,int>::iterator it=wordIndMap.begin(); it!=wordIndMap.end(); it++)
@@ -124,7 +124,7 @@ int main(int argc, char** argv){
 		}
 		
 		//// Use xi, yi to train w
-		trainSVM(data_svm, labels_svm, N_pos+N_neg, dim, C,   w);
+		trainSVM(data_svm, labels_svm, N_pos+N_neg, dim, C, pos_weight,  w);
 		//for(int i=0;i<voc_size;i++)
 		//	cout << w[i] << endl;
 		

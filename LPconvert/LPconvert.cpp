@@ -158,24 +158,25 @@ int main(int argc, char** argv){
 	vector<double> b;
 	vector<double> c;
 	
-	// sum_{h} alpha_{j,h} = 1, for all j
-	/*for(int j=0;j<m;j++){
+	
+	// sum_{h2} alpha_{j,h2} = 1, for all j
+	for(int j=0;j<m;j++){
 		//if( labels[j] == -1 )
 		//	continue;
 
 		Document doc = documents[j];
 		int Tj = doc.size();
 		
-		for(int h=0;h<Tj;h++){
-			Aeq.push_back(Triple(eqID, varID(alpha(j,h)), 1.0));
+		for(int h2=0;h2<Tj;h2++){
+			Aeq.push_back(Triple(eqID, varID(alpha(j,h2)), 1.0));
 		}
 		beq.push_back(1.0);
 		
 		eqID++;
-	}*/
+	}
 	
-	// sum_{h2} beta_{i,h2} = 1, for i=1...m
-	/*for(int i=0;i<m;i++){
+	// sum_{h} beta_{i,h} = 1, for i=1...m
+	for(int i=0;i<m;i++){
 		
 		if( labels[i] == -1 )
 			continue;
@@ -183,15 +184,15 @@ int main(int argc, char** argv){
 		Document doc = documents[i];
 		int Ti = doc.size();
 		
-		for(int h2=0;h2<Ti;h2++){
-			Aeq.push_back(Triple(eqID, varID(beta(i,h2)), 1.0));
+		for(int h=0;h<Ti;h++){
+			Aeq.push_back(Triple(eqID, varID(beta(i,h)), 1.0));
 		}
 		beq.push_back(1.0);
 		
 		eqID++;
-	}*/
+	}
 
-	// sum_{h} sum_{h2} omega_{i,j,h,h2}=1; for all j and i \in \POS
+	// sum_{h} sum_{h2} omega_{i,j,h,h2}=1; for i \in \POS and j \in [m]
 	for(int i=0;i<m;i++){
 		if( labels[i] == -1 )
 			continue;
@@ -207,8 +208,8 @@ int main(int argc, char** argv){
 			int Tj = doc2.size();
 			
 			// sum_{h} sum_{h2} omega_{i,j,h,h2}=1
-			for(int h=0; h<Tj; h++){
-				for(int h2=0;h2<Ti;h2++){
+			for(int h=0; h<Ti; h++){
+				for(int h2=0;h2<Tj;h2++){
 					Aeq.push_back(
 						Triple(eqID, varID(omega(i,j,h,h2)), 1.0));
 				}
@@ -217,68 +218,49 @@ int main(int argc, char** argv){
 			beq.push_back(1.0);
 			eqID++;
 		}
-		
-		/*for(int j=0;j<m;j++){
-			if( labels[j] != -1 )
-				continue;
-			
-			Document doc2 = documents[j];
-			int Tj = doc2.size();
-			
-			// sum_{h2} omega_{i,j,h,h2}=alpha_{j,h}, for all h
-			for(int h=0; h<Tj; h++){
-				for(int h2=0;h2<Ti;h2++){
-					Aeq.push_back(
-						Triple(eqID, varID(omega(i,j,h,h2)), 1.0));
-				}
-				Aeq.push_back(Triple(eqID, varID(alpha(i,h)), -1.0));
-				beq.push_back(0.0);
-				eqID++;
-			}
-		}*/
 	}
 	
-	// omega_{i,j,h,h2} <= alpha_{j,h}
-	/*for(int i=0;i<m;i++){
+	// omega_{i,j,h,h2} <= alpha_{j,h2}
+	for(int i=0;i<m;i++){
 		if( labels[i]==-1 )
 			continue;
 		cerr << "omega <= alpha, i=" << i << endl;
 		int Ti = documents[i].size();
 		for(int j=0;j<m;j++){
 			int Tj = documents[j].size();
-			for(int h=0;h<Tj;h++){
-				for(int h2=0;h2<Ti;h2++){
+			for(int h=0;h<Ti;h++){
+				for(int h2=0;h2<Tj;h2++){
 					
 					A.push_back(Triple(ineqID,varID(omega(i,j,h,h2)),1.0));
-					A.push_back(Triple(ineqID,varID(alpha(j,h)),-1.0));
+					A.push_back(Triple(ineqID,varID(alpha(j,h2)),-1.0));
 					b.push_back(0.0);
 					
 					ineqID++;
 				}
 			}
 		}
-	}*/
+	}
 
-	// omega_{i,j,h,h2} <= beta_{i,h2}
-	/*for(int i=0;i<m;i++){
+	// omega_{i,j,h,h2} <= beta_{i,h}
+	for(int i=0;i<m;i++){
 		if( labels[i]==-1 )
 			continue;
 		cerr << "omega <= beta, i=" << i << endl;
 		int Ti = documents[i].size();
 		for(int j=0;j<m;j++){
 			int Tj = documents[j].size();
-			for(int h=0;h<Tj;h++){
-				for(int h2=0;h2<Ti;h2++){
+			for(int h=0;h<Ti;h++){
+				for(int h2=0;h2<Tj;h2++){
 					
 					A.push_back(Triple(ineqID,varID(omega(i,j,h,h2)),1.0));
-					A.push_back(Triple(ineqID,varID(beta(i,h2)),-1.0));
+					A.push_back(Triple(ineqID,varID(beta(i,h)),-1.0));
 					b.push_back(0.0);
 					
 					ineqID++;
 				}
 			}
 		}
-	}*/
+	}
 	
 	//generate c
 	int n = id_map.size() + m;
@@ -286,6 +268,7 @@ int main(int argc, char** argv){
 	for(int i=0;i<m;i++)
 		c[ varID( xi(i) ) ] = 1.0;
 	
+	//generate xi's constraints
 	for(int i=0;i<m;i++){
 		if( labels[i] == -1 ){
 			continue;
@@ -295,10 +278,10 @@ int main(int argc, char** argv){
 		for(int j=0;j<m;j++){
 			int Tj = documents[j].size();
 			double yj = labels[j];
-			for(int h=0;h<Tj;h++){
-				Sentence& s1 = documents[j][h];
-				for(int h2=0;h2<Ti;h2++){
-					Sentence& s2 = documents[i][h2];
+			for(int h=0;h<Ti;h++){
+				Sentence& s1 = documents[i][h];
+				for(int h2=0;h2<Tj;h2++){
+					Sentence& s2 = documents[j][h2];
 					double kernel_ijhh2 = yj*kernel(s1,s2)/m/lambda;
 					if( kernel_ijhh2 != 0.0 )
 						A.push_back(
@@ -313,32 +296,32 @@ int main(int argc, char** argv){
 		ineqID++;
 	}
 	
-	/*for(int i=0;i<m;i++){
+	for(int i=0;i<m;i++){
 		if( labels[i] == 1 )
 			continue;
 		
 		cerr << "xi-, i=" << i << endl;
 		int Ti = documents[i].size();
-		for(int h2=0;h2<Ti;h2++){
-			Sentence& s2 = documents[i][h2];
+		for(int h=0;h<Ti;h++){
+			Sentence& s1 = documents[i][h];
 			//generate 1 constraint
 			A.push_back( Triple(ineqID, varID(xi(i)), -1.0) );
 			for(int j=0;j<m;j++){
 				int yj = labels[j];
 				int Tj = documents[j].size();
-				for(int h=0;h<Tj;h++){
-					Sentence& s1 = documents[j][h];
+				for(int h2=0;h2<Tj;h2++){
+					Sentence& s2 = documents[j][h2];
 					double kernel_ijhh2 = yj*kernel(s1,s2)/m/lambda;
 					if( kernel_ijhh2 != 0.0 )
-						A.push_back( Triple(ineqID,varID(alpha(j,h)),kernel_ijhh2) );
+						A.push_back( Triple(ineqID,varID(alpha(j,h2)),kernel_ijhh2) );
 				}
 			}
 			b.push_back(-1.0);
 			
 			ineqID++;
 		}
-	}*/
-
+	}
+	
 	int m_ineq = ineqID;
 	int m_eq = eqID;
 	cerr << "writing..." << endl;
