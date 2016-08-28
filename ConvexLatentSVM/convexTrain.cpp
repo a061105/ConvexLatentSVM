@@ -815,13 +815,13 @@ int main(int argc, char** argv){
 		double lambda = atof(argv[2]);
 		double rho = atof(argv[3]);
 		int kernel_type = atoi(argv[4]);
-		/*if( kernel_type == 0 ){
+		if( kernel_type == 0 ){
 			kernel = BOW_kernel;
 			feaVect = BOWfeaVect;
 		}else{
 			kernel = PSWM_kernel;
 			feaVect = PSWMfeaVect;
-		}*/
+		}
 		
 
 		GDMMsolve solver(input_file, lambda, rho);
