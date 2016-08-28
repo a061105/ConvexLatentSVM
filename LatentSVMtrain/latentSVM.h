@@ -88,7 +88,7 @@ void readModel(char* fname, vector<double>& w){
 	int fea_type;
 	fin >> tmp >> fea_type;
 	if( fea_type == 0 ){
-		//do nothing
+		feaVect = BOWfeaVect;
 	}else if( fea_type == 1 ){
 		feaVect = PSWMfeaVect;
 	}else{

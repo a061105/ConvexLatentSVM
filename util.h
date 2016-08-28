@@ -119,7 +119,7 @@ vector<string> split(string str, string pattern){
 
 		index = str.find(pattern,i);
 		string sub = str.substr(i,index-i);
-		if(sub.length()>0 && sub!=" ")
+		if(sub.length()>0 && sub!=" " && sub!="  ")
 			str_split.push_back(sub);
 		
 		i = index+1;
@@ -277,7 +277,7 @@ double PSWM_kernel(Sentence& s1, Sentence& s2){
 }
 
 
-SparseVec (*feaVect)(Sentence&) = BOWfeaVect;
-//SparseVec (*feaVect)(Sentence&) = PSWMfeaVect;
-double (*kernel)(Sentence&, Sentence&) = BOW_kernel;
-//double (*kernel)(Sentence&, Sentence&) = PSWM_kernel;
+//SparseVec (*feaVect)(Sentence&) = BOWfeaVect;
+SparseVec (*feaVect)(Sentence&) = PSWMfeaVect;
+//double (*kernel)(Sentence&, Sentence&) = BOW_kernel;
+double (*kernel)(Sentence&, Sentence&) = PSWM_kernel;

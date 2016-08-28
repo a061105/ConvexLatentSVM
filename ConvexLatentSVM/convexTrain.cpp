@@ -271,7 +271,7 @@ class GDMMsolve{
 		cerr << "init AL_obj=" << AL_obj() << endl;
 		
 		//Augmented Lagrangian Loop
-		int max_iter = 1000;
+		int max_iter = 500;
 		int iter = 0;
 		vector<double> omega_new, alpha_new, beta_new;
 		while( iter <= max_iter ){

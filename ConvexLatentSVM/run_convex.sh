@@ -1,9 +1,9 @@
 #!/bin/bash
 
-train_data=../SimulatedData/docs
-test_data=../SimulatedData/docs
+train_data=../SimulatedData/docs.train
+test_data=../SimulatedData/docs.test
 
 
-./convexTrain $train_data 10 0.001 0
-../LatentSVMtrain/latentTrain $train_data 10.0 1 0 1.0 beta_assign
+./convexTrain $train_data 10 0.01 0
+../LatentSVMtrain/latentTrain $train_data 1.0 1 0 1.0 beta_assign
 ../LatentSVMtrain/predict $test_data model
