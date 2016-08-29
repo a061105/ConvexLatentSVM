@@ -2,8 +2,6 @@
 
 train_data=../SimulatedData/docs.train
 test_data=../SimulatedData/docs.test
-#train_data=../../docs.train
-#test_data=../../docs.test
 
 
 ./convexTrain $train_data 10 0.01 0

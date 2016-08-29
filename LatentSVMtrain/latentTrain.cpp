@@ -111,7 +111,10 @@ int main(int argc, char** argv){
 		}
 		
 		//// Use xi, yi to train w
-		trainHiddenSVM(data_pos, data_neg, labels, dim, C,  w);
+		if( pos_weight < 0.0 )
+			trainHiddenSVM(data_pos, data_neg, labels, dim, C,  w);
+		else
+			trainSVM(data_pos, data_neg, labels, dim, C, pos_weight, w);
 		
 		// Given w, solve h for positive examples
 		for(int i=0;i<N;i++){

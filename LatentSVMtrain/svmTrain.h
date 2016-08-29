@@ -31,8 +31,24 @@ void shuffle( vector<T>& vect ){
 	return sum;
 }*/
 
-void trainSVM(vector<SparseVec>& data, vector<int>& labels, int N, int D, double C, double pos_weight,  vector<double>& w){
+void trainSVM(vector<SparseVec>& data_pos, vector<vector<SparseVec> >& data_neg, vector<int>& labels_org, int D, double C, double pos_weight,  vector<double>& w){
 	
+	int N=0, Np=data_pos.size();
+	vector<SparseVec> data;
+	vector<int> labels;
+	for(int i=0;i<data_pos.size();i++){
+		data.push_back( data_pos[i] );
+		labels.push_back( labels_org[i] );
+		N++;
+	}
+	for(int i=0;i<data_neg.size();i++){
+		int yi = labels_org[Np+i];
+		for(int h=0;h<data_neg[i].size();h++){
+			data.push_back( data_neg[i][h] );
+			labels.push_back( yi );
+			N++;
+		}
+	}
 	//initialization
 	vector<double> alpha;
 	alpha.resize(N);
