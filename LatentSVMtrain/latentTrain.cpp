@@ -9,10 +9,12 @@ void readGivenH(char* fname, vector<int>& h){
 	}
 	int doc_ind, h_val;
 	
+	int i=0;
 	while( !fin.eof() ){
-		fin >> doc_ind  >> h_val;
+		fin >> h_val;
 		if( !fin.eof() ){
-			h[ doc_ind ] = h_val;
+			h[i] = h_val;
+			i++;
 		}
 	}
 }

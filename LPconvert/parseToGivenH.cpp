@@ -66,7 +66,7 @@ int main(int argc, char** argv){
 	string output_fname = string(var_sol_fname) + suffix;
 	ofstream fout( output_fname.c_str() );
 	for(int i=0;i<h_list.size();i++)
-		fout << i << " " << h_list[i] << endl;
+		fout << h_list[i] << endl;
 	fout.close();
 	
 	return 0;

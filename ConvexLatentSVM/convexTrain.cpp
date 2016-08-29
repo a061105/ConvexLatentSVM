@@ -764,7 +764,6 @@ int main(int argc, char** argv){
 		
 		ofstream fout("beta_assign");
 		map<int, SparseVec>& beta_act = solver.beta_act;
-		int pos_count=0;
 		for(int i=0;i<solver.labels.size();i++){
 			if( solver.labels[i]==1 ){
 				cout << i << " ";
@@ -777,8 +776,7 @@ int main(int argc, char** argv){
 				//cout << beta_act_i[0].first << ":" << beta_act_i[0].second << " ";
 				//cout << endl;
 				
-				fout << pos_count << " " << beta_act_i[0].first << endl;
-				pos_count++;
+				fout << beta_act_i[0].first << endl;
 			}
 		}
 		fout.close();
