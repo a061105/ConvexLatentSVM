@@ -67,6 +67,16 @@ double dot(vector<double>& v, SparseVec& v2){
 	return sum;
 }
 
+double norm_sq(SparseVec& v){
+	
+	double sum = 0.0;
+	for(SparseVec::iterator it=v.begin(); it!=v.end(); it++){
+		double val = it->second;
+		sum += val*val;
+	}
+	return sum;
+}
+
 int max_of( vector<int>& v ){
 	
 	int max_val = -INT_MIN;
@@ -75,6 +85,12 @@ int max_of( vector<int>& v ){
 			max_val = *it;
 
 	return max_val;
+}
+
+void vadd(vector<double>& w, double c, SparseVec& sv){
+	
+	for(SparseVec::iterator it=sv.begin(); it!=sv.end(); it++)
+		w[it->first] += c * it->second;
 }
 
 SparseVec vadd( SparseVec& v1, SparseVec& v2 ){
@@ -108,6 +124,71 @@ SparseVec vadd( SparseVec& v1, SparseVec& v2 ){
 	}
 	
 	return v3;
+}
+
+void simplex_proj( vector<double> v, vector<double>& v_proj, int d, double S ){
+	
+	vector<int> index;
+	index.resize(d);
+	for(int i=0;i<d;i++)
+		index[i] = i;
+	sort(index.begin(), index.end(), ScoreComp(&v)); //descending order
+	
+	int j=0;
+	double part_sum = 0.0;
+	for(;j<d;j++){
+		int k = index[j];
+		part_sum += v[k];
+		if( v[k] - (part_sum-S)/(j+1) <= 0.0 ){
+			part_sum -= v[k];
+			j -= 1;
+			break;
+		}
+	}
+	if( j == d ) j--;
+	
+	double theta = (part_sum-S)/(j+1);
+	
+	for(int k=0;k<d;k++)
+		v_proj[k] = max( v[k]-theta, 0.0);
+}
+
+
+void simplex_ineq_proj( vector<double> v, vector<double>& v_proj, int d, double S ){
+	
+	double sum = 0.0;
+	for(int i=0;i<d;i++){
+		v[i] = max(v[i],0.0);
+		sum += v[i];
+	}
+	if( sum <= S ){
+		v_proj = v;
+		return ;
+	}
+	
+	vector<int> index;
+	index.resize(d);
+	for(int i=0;i<d;i++)
+		index[i] = i;
+	sort(index.begin(), index.end(), ScoreComp(&v)); //descending order
+	
+	int j=0;
+	double part_sum = 0.0;
+	for(;j<d;j++){
+		int k = index[j];
+		part_sum += v[k];
+		if( v[k] - (part_sum-S)/(j+1) <= 0.0 ){
+			part_sum -= v[k];
+			j -= 1;
+			break;
+		}
+	}
+	if( j == d ) j--;
+	
+	double theta = (part_sum-S)/(j+1);
+	
+	for(int k=0;k<d;k++)
+		v_proj[k] = max( v[k]-theta, 0.0);
 }
 
 vector<string> split(string str, string pattern){
