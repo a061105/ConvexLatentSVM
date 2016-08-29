@@ -82,51 +82,39 @@ int main(int argc, char** argv){
 	}
 	if( given_h_fname != NULL ){
 		readGivenH( given_h_fname , h );
-		/*for(int i=0;i<5;i++){
-			int s = h[i];
-			for(int j=0;j<docs[i][s].size();j++){
-				cerr << wordMap[ docs[i][s][j] ];
-			}
-			cerr << endl;
-		}
-		exit(0);*/
 	}
 	
-	vector<SparseVec> data_svm;
+	vector<SparseVec> data_pos;
+	vector<vector<SparseVec> > data_neg;
 	vector<int> labels_svm;
 	for(int iter=0; iter<nIter; iter++){
 		cerr << "iter=" << iter << endl;
 		// Given h, solve w
-		//// Generate xi for i being positive
-		data_svm.clear();
-		labels_svm.clear();
-		int N_pos = 0;
+		//// Generate xi for i \in positive
+		data_pos.clear();
 		for(int i=0;i<N;i++){
 			if( labels[i]==-1 )
 				continue;
-			N_pos++;
 			SparseVec xi = feaVect( docs[i][ h[i] ] );
-			data_svm.push_back(xi);
-			labels_svm.push_back(+1);
+			data_pos.push_back(xi);
 		}
-		//// Generate xi for i being negative
-		int N_neg=0;
+		//// Generate xi for i \in negative
 		for(int i=0;i<N;i++){
 			if( labels[i]==1 )
 				continue;
-			int Ti = docs[i].size();
-			for(int j=0;j<Ti;j++){
-				N_neg++;
+			data_neg.push_back(vector<SparseVec>());
+			int Hi = docs[i].size();
+			for(int j=0;j<Hi;j++){
 				SparseVec xi = feaVect( docs[i][j] );
-				data_svm.push_back(xi);
-				labels_svm.push_back(-1);
+				data_neg.back().push_back(xi);
 			}
 		}
 		
 		//// Use xi, yi to train w
-		trainSVM(data_svm, labels_svm, N_pos+N_neg, dim, C, pos_weight,  w);
-		//for(int i=0;i<voc_size;i++)
-		//	cout << w[i] << endl;
+		if( pos_weight < 0.0 )
+			trainHiddenSVM(data_pos, data_neg, labels, dim, C,  w);
+		else
+			trainSVM(data_pos, data_neg, labels, dim, C, pos_weight, w);
 		
 		// Given w, solve h for positive examples
 		for(int i=0;i<N;i++){

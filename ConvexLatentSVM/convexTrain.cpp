@@ -10,72 +10,6 @@ const double TOL = 1e-4;
 const double eta = 0.1;
 const double tau = 10; //softmax parameter
 
-const double S = 1.0;
-
-void simplex_proj( vector<double> v, vector<double>& v_proj, int d ){
-	
-	vector<int> index;
-	index.resize(d);
-	for(int i=0;i<d;i++)
-		index[i] = i;
-	sort(index.begin(), index.end(), ScoreComp(&v)); //descending order
-	
-	int j=0;
-	double part_sum = 0.0;
-	for(;j<d;j++){
-		int k = index[j];
-		part_sum += v[k];
-		if( v[k] - (part_sum-S)/(j+1) <= 0.0 ){
-			part_sum -= v[k];
-			j -= 1;
-			break;
-		}
-	}
-	if( j == d ) j--;
-	
-	double theta = (part_sum-S)/(j+1);
-	
-	for(int k=0;k<d;k++)
-		v_proj[k] = max( v[k]-theta, 0.0);
-}
-
-
-void simplex_ineq_proj( vector<double> v, vector<double>& v_proj, int d ){
-	
-	double sum = 0.0;
-	for(int i=0;i<d;i++){
-		v[i] = max(v[i],0.0);
-		sum += v[i];
-	}
-	if( sum <= S ){
-		v_proj = v;
-		return ;
-	}
-	
-	vector<int> index;
-	index.resize(d);
-	for(int i=0;i<d;i++)
-		index[i] = i;
-	sort(index.begin(), index.end(), ScoreComp(&v)); //descending order
-	
-	int j=0;
-	double part_sum = 0.0;
-	for(;j<d;j++){
-		int k = index[j];
-		part_sum += v[k];
-		if( v[k] - (part_sum-S)/(j+1) <= 0.0 ){
-			part_sum -= v[k];
-			j -= 1;
-			break;
-		}
-	}
-	if( j == d ) j--;
-	
-	double theta = (part_sum-S)/(j+1);
-	
-	for(int k=0;k<d;k++)
-		v_proj[k] = max( v[k]-theta, 0.0);
-}
 
 double loss( double z, int y ){
 
@@ -355,8 +289,8 @@ class GDMMsolve{
 						act_size--;
 					}
 					
-					//simplex_ineq_proj( omega_new, omega_new, act_size );
-					simplex_proj( omega_new, omega_new, act_size );
+					//simplex_ineq_proj( omega_new, omega_new, act_size, 1.0 );
+					simplex_proj( omega_new, omega_new, act_size, 1.0 );
 					
 					//maintain response z_i
 					for(int r=0;r<act_size;r++){
@@ -435,8 +369,8 @@ class GDMMsolve{
 					beta_new[r] = b_val - grad[h]/Qih;
 				}
 				////projection
-				simplex_ineq_proj( beta_new, beta_new, act_size );
-				//simplex_proj( beta_new, beta_new, act_size );
+				simplex_ineq_proj( beta_new, beta_new, act_size, 1.0 );
+				//simplex_proj( beta_new, beta_new, act_size, 1.0 );
 				
 				//update beta and shrink active set (remove those beta=0)
 				SparseVec beta_i_act_new;
@@ -529,8 +463,8 @@ class GDMMsolve{
 					alpha_new[r] = a_val - grad[h2]/Qih2;
 				}
 				////projection
-				simplex_ineq_proj( alpha_new, alpha_new, act_size );
-				//simplex_proj( alpha_new, alpha_new, act_size );
+				simplex_ineq_proj( alpha_new, alpha_new, act_size, 1.0 );
+				//simplex_proj( alpha_new, alpha_new, act_size, 1.0 );
 				
 				
 				//update alpha and shrink active set (remove those alpha=0)
