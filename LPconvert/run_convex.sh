@@ -11,5 +11,5 @@ test_data=../SimulatedData/docs.test
 ./paste.sh
 ./parseToGivenH var_sol
 
-../LatentSVMtrain/latentTrain $train_data 1.0 1 0  1.0 var_sol.given_h
+../LatentSVMtrain/latentTrain $train_data 10.0 1 0  1.0 var_sol.given_h
 ../LatentSVMtrain/predict $test_data model

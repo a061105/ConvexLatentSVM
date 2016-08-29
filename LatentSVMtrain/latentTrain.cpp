@@ -84,8 +84,21 @@ int main(int argc, char** argv){
 		readGivenH( given_h_fname , h );
 	}
 	
-	vector<SparseVec> data_pos;
+	//// Generate xi for i \in negative
 	vector<vector<SparseVec> > data_neg;
+	data_neg.clear();
+	for(int i=0;i<N;i++){
+		if( labels[i]==1 )
+			continue;
+		data_neg.push_back(vector<SparseVec>());
+		int Hi = docs[i].size();
+		for(int j=0;j<Hi;j++){
+			SparseVec xi = feaVect( docs[i][j] );
+			data_neg.back().push_back(xi);
+		}
+	}
+
+	vector<SparseVec> data_pos;
 	vector<int> labels_svm;
 	for(int iter=0; iter<nIter; iter++){
 		cerr << "iter=" << iter << endl;
@@ -97,17 +110,6 @@ int main(int argc, char** argv){
 				continue;
 			SparseVec xi = feaVect( docs[i][ h[i] ] );
 			data_pos.push_back(xi);
-		}
-		//// Generate xi for i \in negative
-		for(int i=0;i<N;i++){
-			if( labels[i]==1 )
-				continue;
-			data_neg.push_back(vector<SparseVec>());
-			int Hi = docs[i].size();
-			for(int j=0;j<Hi;j++){
-				SparseVec xi = feaVect( docs[i][j] );
-				data_neg.back().push_back(xi);
-			}
 		}
 		
 		//// Use xi, yi to train w
