@@ -45,6 +45,14 @@ void print( ostream& out, vector<double>& v ){
 	out << endl;
 }
 
+void writeVect( char* fname, vector<int>& v ){
+	
+	ofstream fout(fname);
+	for(int i=0;i<v.size();i++)
+		fout << v[i] << endl;
+	fout.close();
+}
+
 SparseVec::iterator argmax( SparseVec& v ){
 	
 	double max_val = -1e300;
