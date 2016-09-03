@@ -141,5 +141,6 @@ int main(int argc, char** argv){
 	}
 	
 	writeModel("model", w, fea_option);
+	writeVect("h_pos", h);
 	cout << "train acc=" << accuracy( docs, labels, w ) << endl;
 }
