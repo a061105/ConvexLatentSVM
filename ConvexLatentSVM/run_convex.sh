@@ -5,5 +5,6 @@ test_data=../SimulatedData/docs.test
 
 
 ./convexTrain $train_data 10 0.01 0
-../LatentSVMtrain/latentTrain $train_data 10.0 1 0 1.0 beta_assign
+../LatentSVMtrain/latentTrain -h beta_assign $train_data 10.0 1 0 
+../LatentSVMtrain/latentTrain -w model_init $train_data 10.0 2 0 
 ../LatentSVMtrain/predict $test_data model
