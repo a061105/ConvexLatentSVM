@@ -6,7 +6,7 @@
 using namespace std;
 typedef multimap<double,int, greater<double> > SortKerMap;
 
-const double TOL = 1e-4;
+const double TOL = 1e-6;
 const double eta = 0.1;
 const double tau = 10; //softmax parameter
 
@@ -178,29 +178,6 @@ class GDMMsolve{
 		return smax;
 	}
 	
-	/*double softPredict( map<int,SparseVec>& alpha_act, vector<SparseVec>& Phi_i, int i ){
-		
-		int H = Phi_i.size();
-		double smax = 0.0;
-		for(int h=0;h<H;h++){
-			
-			double ker_dot = 0.0;
-			for(int j=0;j<m;j++){
-				vector<double>& kmat = kernel_map[ make_pair(i,j) ];
-				int Tj = documents[j].size();
-				SparseVec& alpha_act_j = alpha_act[j];
-				for(SparseVec::iterator it=alpha_act_j.begin(); it!=alpha_act_j.end(); it++)
-					ker_dot += kmat[ h*Tj + it->first ]*it->second*labels[j];
-			}
-			ker_dot /= lambda;
-			
-			smax += exp( ker_dot );
-		}
-		smax = log(smax);
-
-		return smax;
-	}*/
-	
 	void solve(){
 		
 		//initialize primal, dual variables
@@ -208,7 +185,7 @@ class GDMMsolve{
 		cerr << "init AL_obj=" << AL_obj() << endl;
 		
 		//Augmented Lagrangian Loop
-		int max_iter = 500;
+		int max_iter = 1000;
 		int iter = 0;
 		vector<double> omega_new, alpha_new, beta_new;
 		while( iter <= max_iter ){
@@ -509,8 +486,8 @@ class GDMMsolve{
 					int h_h2 = it2->first;
 					int h = h_h2/Tj;
 					int h2 = h_h2 % Tj;
-					mu_ij[h_h2] += 0.1*max( it2->second - alpha_j[h2] , 0.0);
-					nu_ij[h_h2] += 0.1*max( it2->second - beta_i[h], 0.0 );
+					mu_ij[h_h2] += 0.01*max( it2->second - alpha_j[h2] , 0.0);
+					nu_ij[h_h2] += 0.01*max( it2->second - beta_i[h], 0.0 );
 				}
 			}
 			
@@ -771,7 +748,7 @@ int main(int argc, char** argv){
 				SparseVec& beta_act_i = beta_act[i];
 				sort(beta_act_i.begin(), beta_act_i.end(), PairValueComp());
 				int k=0;
-				for(SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end() && k<5; it++,k++)
+				for(SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end() && k<10; it++,k++)
 					cout << it->first << ":" << it->second << " ";
 				cout << endl;
 				
