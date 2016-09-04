@@ -10,7 +10,7 @@ given_h=../SimulatedData/keypos.train
 rm -f tmp2;
 for i in $(seq 1 1000)
 do
-	../LatentSVMtrain/latentTrain $train_data 10.0 40 0 1.0 > tmp 2> tmp #$given_h 
+	../LatentSVMtrain/latentTrain $train_data 10.0 40 0 > tmp 2> tmp #$given_h 
 	../LatentSVMtrain/predict $train_data model 2>> tmp2 >> tmp2
 	../LatentSVMtrain/predict $test_data model 2>> tmp2 >> tmp2
 	python takeMax.py tmp2 'N=200, acc='
