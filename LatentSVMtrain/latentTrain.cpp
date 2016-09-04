@@ -132,8 +132,9 @@ int main(int argc, char** argv){
 	vector<int> labels_svm;
 	for(int iter=0; iter<param->nIter; iter++){
 		
-		cerr << "iter=" << iter << endl;
-		
+		//cerr << "iter=" << iter << endl;
+		cerr << "#";
+
 		// Given h, solve w
 		//// Generate xi for i \in positive
 		if( iter!=0 || param->init_w_fpath==NULL ){
@@ -171,6 +172,7 @@ int main(int argc, char** argv){
 			h[i] = argmax;
 		}
 	}
+	cerr << endl;
 	
 	writeModel("model", w, param->fea_option);
 	writeVect("h_pos", h);
