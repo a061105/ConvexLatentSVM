@@ -5,6 +5,24 @@
 
 using namespace std;
 
+class Param{
+	public:
+	char* train_doc_fpath;
+	double C;
+	int nIter;
+	int fea_option; //for L1-norm (default 1/N)
+	
+	char* init_h_fpath;
+	char* init_w_fpath;
+	double pos_weight; //weight of loss of positive samples
+	
+	Param(){
+		init_h_fpath = NULL;
+		init_w_fpath = NULL;
+		pos_weight = 1.0;
+	}
+};
+
 /*SparseVec genFeature( Sentence& sen, int voc_size, int option ){
 	
 	vector<int> set;

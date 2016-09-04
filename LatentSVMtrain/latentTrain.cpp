@@ -19,62 +19,90 @@ void readGivenH(char* fname, vector<int>& h){
 	}
 }
 
+void exit_with_help(){
+
+	cerr << "./latentSVM [train_doc] [C] [#iter] [fea_option]" << endl;
+	cerr << "output: model" << endl;
+	cerr << "optiones:" << endl;
+	cerr << "	-h hidden_assign_file: initialize hidden variables w/ a given assignments." << endl;
+	cerr << "	-w model_init_file: initialize model w." << endl;
+	cerr << "	-p positive_weight: reweight loss of positive samples (default 1.0)." << endl;
+	cerr << "feature options:" << endl;
+	cerr << "	0: bag-of-word" << endl;
+	cerr << "	1: position-specific weight matrix" << endl;
+	exit(0);
+}
+
+void parse_cmd_line(int argc, char** argv, Param* param){
+
+	int i;
+	for(i=1;i<argc;i++){
+		if( argv[i][0] != '-' )
+			break;
+		if( ++i >= argc )
+			exit_with_help();
+
+		switch(argv[i-1][1]){
+			
+			case 'h': param->init_h_fpath = argv[i];
+				  break;
+			case 'w': param->init_w_fpath = argv[i];
+				  break;
+			case 'p': param->pos_weight = atoi(argv[i]);
+				  break;
+			default:
+				  cerr << "unknown option: -" << argv[i-1][1] << endl;
+				  exit(0);
+		}
+	}
+	
+	if(i>=argc)
+		exit_with_help();
+	
+	param->train_doc_fpath = argv[i++];
+	param->C = atof( argv[i++] );
+	param->nIter = atoi( argv[i++] );
+	param->fea_option = atoi( argv[i++] );
+}
+
 int main(int argc, char** argv){
 	
-	if( argc < 1+5 ){
-		cerr << "./latentSVM [train_doc] [C] [#iter] [fea_option] [pos_weight] (given_h)" << endl;
-		cerr << "output: model" << endl;
-		cerr << "feature options:" << endl;
-		cerr << "	0: bag-of-word" << endl;
-		cerr << "	1: position-specific weight matrix" << endl;
-		exit(0);
-	}
-	
-	char* train_doc_fname = argv[1];
-	double C = atof( argv[2] );
-	int nIter = atoi( argv[3] );
-	int fea_option = atoi( argv[4] );
-	double pos_weight = atof( argv[5] );
-	char* given_h_fname = NULL;
-	if( argc > 1+5 )
-		given_h_fname = argv[6];
+	Param* param = new Param();
+	parse_cmd_line(argc, argv, param);
 	
 	srand(time(NULL));
+	
+	//read model if -w is specified
+	vector<double> w;
+	if( param->init_w_fpath != NULL ){
+		readModel( param->init_w_fpath, w );
+	}
+	
+	//read data
 	vector<Document> docs;
 	vector<int> labels;
-	readData( train_doc_fname, docs, labels );
+	readData( param->train_doc_fpath, docs, labels );
 	
-	/*vector<string> wordMap;
-	wordMap.resize( wordIndMap.size() );
-	for(map<string,int>::iterator it=wordIndMap.begin(); it!=wordIndMap.end(); it++)
-		wordMap[it->second] = it->first;
-	for(int i=0;i<docs[0].size();i++){
-		for(int j=0;j<docs[0][i].size();j++) 
-			cerr << wordMap[docs[0][i][j]] << " ";
-		cerr << endl;
-	}
-	cerr << endl;*/
-
 	int N = docs.size();
 	cerr << "num of docs=" << N << endl;
 	int voc_size = wordIndMap.size();
 	cerr << "|voc|=" << voc_size << endl;
 	
 	int dim;
-	if( fea_option == 0 ){
+	if( param->fea_option == 0 ){
 		dim = voc_size;
 		feaVect = BOWfeaVect;
-	}else if( fea_option == 1 ){
+	}else if( param->fea_option == 1 ){
 		feaVect = PSWMfeaVect;
 		dim = voc_size*docs[0][0].size();
 	}else{
-		cerr << "[error]: No such feature option: " << fea_option << endl;
+		cerr << "[error]: No such feature option: " << param->fea_option << endl;
 		exit(0);
 	}
 	cerr << "dim=" << dim << endl;
 
-	vector<double> w;
-	w.resize(dim, 0.0);
+	if( param->init_w_fpath==NULL )
+		w.resize(dim, 0.0);
 	
 	vector<int> h;
 	h.resize( N );
@@ -82,8 +110,8 @@ int main(int argc, char** argv){
 		if( labels[i] == 1 )
 			h[i] = rand()%( docs[i].size() );
 	}
-	if( given_h_fname != NULL ){
-		readGivenH( given_h_fname , h );
+	if( param->init_h_fpath != NULL ){
+		readGivenH( param->init_h_fpath , h );
 	}
 	
 	//// Generate xi for i \in negative
@@ -102,24 +130,28 @@ int main(int argc, char** argv){
 
 	vector<SparseVec> data_pos;
 	vector<int> labels_svm;
-	for(int iter=0; iter<nIter; iter++){
+	for(int iter=0; iter<param->nIter; iter++){
+		
 		cerr << "iter=" << iter << endl;
+		
 		// Given h, solve w
 		//// Generate xi for i \in positive
-		data_pos.clear();
-		for(int i=0;i<N;i++){
-			if( labels[i]==-1 )
-				continue;
-			SparseVec xi = feaVect( docs[i][ h[i] ] );
-			data_pos.push_back(xi);
+		if( iter!=0 || param->init_w_fpath==NULL ){
+			data_pos.clear();
+			for(int i=0;i<N;i++){
+				if( labels[i]==-1 )
+					continue;
+				SparseVec xi = feaVect( docs[i][ h[i] ] );
+				data_pos.push_back(xi);
+			}
+
+			//// Use xi, yi to train w
+			if( param->pos_weight < 0.0 )
+				trainHiddenSVM(data_pos, data_neg, labels, dim, param->C,  w);
+			else
+				trainSVM(data_pos, data_neg, labels, dim, param->C, param->pos_weight, w);
 		}
-		
-		//// Use xi, yi to train w
-		if( pos_weight < 0.0 )
-			trainHiddenSVM(data_pos, data_neg, labels, dim, C,  w);
-		else
-			trainSVM(data_pos, data_neg, labels, dim, C, pos_weight, w);
-		
+
 		// Given w, solve h for positive examples
 		for(int i=0;i<N;i++){
 			if( labels[i] == -1 )
@@ -140,7 +172,7 @@ int main(int argc, char** argv){
 		}
 	}
 	
-	writeModel("model", w, fea_option);
+	writeModel("model", w, param->fea_option);
 	writeVect("h_pos", h);
 	cout << "train acc=" << accuracy( docs, labels, w ) << endl;
 }
