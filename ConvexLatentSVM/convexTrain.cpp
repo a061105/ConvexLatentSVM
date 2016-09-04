@@ -59,6 +59,9 @@ class GDMMsolve{
 	map< int, SparseVec > beta_act;
 	map< int, vector<double> > beta;
 	
+	//maintain w = \frac{1}{lambdaa}\sum_{j,h2} alpha(j,h2) yj phi(xj,h2)
+	vector<double> w;
+	
 	double train_start_time;
 	double train_end_time;
 
@@ -534,8 +537,6 @@ class GDMMsolve{
 	map< pair<int,int>, vector<double> > nu;
 	//maintain response z[i]= \frac{1}{lambda}\sum_h\sum_j\sum_h' omega(i,j,h,h') y_j K(...)
 	vector<double> z; 
-	//maintain w = \frac{1}{lambdaa}\sum_{j,h2} alpha(j,h2) yj phi(xj,h2)
-	vector<double> w;
 
 	void initialize(){
 		for(int i=0;i<m;i++){
@@ -773,13 +774,13 @@ int main(int argc, char** argv){
 				for(SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end() && k<5; it++,k++)
 					cout << it->first << ":" << it->second << " ";
 				cout << endl;
-				//cout << beta_act_i[0].first << ":" << beta_act_i[0].second << " ";
-				//cout << endl;
 				
 				fout << beta_act_i[0].first << endl;
 			}
 		}
 		fout.close();
+		
+		writeModel( "model_init", solver.w, kernel_type );
 		
 		/*map<pair<int,int>, SparseVec>& omega_act = solver.omega_act;
 		int num_pos = solver.pos_size;
