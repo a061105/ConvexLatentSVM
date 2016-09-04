@@ -12,6 +12,7 @@ using namespace std;
 typedef vector<int> Sentence;
 typedef vector<Sentence> Document;
 typedef vector<pair<int,double> > SparseVec;
+const int FNAME_LEN = 100;
 
 class ScoreComp{
 	public:
@@ -30,6 +31,15 @@ class PairValueComp{
 			return it1.second > it2.second;
 		}
 };
+
+void printMap( ostream& out, map<int,int>& m ){
+	
+	out << "map[";
+	for(map<int,int>::iterator it=m.begin(); it!=m.end(); it++){
+		out << it->first << ":" << it->second << ", ";
+	}
+	out << "]";
+}
 
 void print( ostream& out, SparseVec& v ){
 	

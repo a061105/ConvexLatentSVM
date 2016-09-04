@@ -709,11 +709,45 @@ class GDMMsolve{
 		return max_infeas;
 	}
 };
+
+void writeHiddenAssign( char* fpath, vector<int>& labels, map<int,SparseVec>& beta_act, map<int,int>& tighten_list ){
 	
+	ofstream fout(fpath);
+	for(int i=0;i<labels.size();i++){
+		if( labels[i]!=1 )
+			continue;
+		
+		SparseVec& beta_act_i = beta_act[i];
+		sort(beta_act_i.begin(), beta_act_i.end(), PairValueComp());
+		
+		map<int,int>::iterator it;
+		if( (it=tighten_list.find(i)) != tighten_list.end() )
+			fout << it->second << endl;
+		else
+			fout << beta_act_i[0].first << endl;
+	}
+	fout.close();
+}
+
+void dumpHiddenDist( ostream& out, vector<int>& labels, map<int,SparseVec>& beta_act, int num_dump){
+
+	for(int i=0;i<labels.size();i++){
+		if( labels[i]!=1 )
+			continue;
+		out << i << " ";
+		SparseVec& beta_act_i = beta_act[i];
+		sort(beta_act_i.begin(), beta_act_i.end(), PairValueComp());
+		int k=0;
+		for(SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end() && k<num_dump; it++,k++)
+			out << it->first << ":" << it->second << " ";
+		out << endl;
+	}
+}
+
 int main(int argc, char** argv){
 
-		if( argc < 1+4 ){
-			cerr << "./ConvexTrain [data] [lambda] [rho] [kernel]"  << endl;
+		if( argc < 1+5 ){
+			cerr << "./ConvexTrain [data] [lambda] [rho] [kernel] [num_tighten]"  << endl;
 			cerr << "kernel options:" << endl;
 			cerr << "	0: Bag-of-word" << endl;
 			cerr << "	1: PSWM" << endl;
@@ -724,10 +758,12 @@ int main(int argc, char** argv){
 		double lambda = atof(argv[2]);
 		double rho = atof(argv[3]);
 		int kernel_type = atoi(argv[4]);
+		int num_tighten = atoi(argv[5]);
 		
 		vector<Document> documents;
 		vector<int> labels;
 		readData(input_file,    documents, labels );
+		int m = labels.size();
 		int voc_size = wordIndMap.size();
 		int dim;
 		if( kernel_type == 0 ){
@@ -740,27 +776,44 @@ int main(int argc, char** argv){
 			dim = voc_size*documents[0][0].size();
 		}
 		
-		GDMMsolve solver(documents, labels, dim, lambda, rho);
-		solver.solve();
-		
-		ofstream fout("beta_assign");
-		map<int, SparseVec>& beta_act = solver.beta_act;
-		for(int i=0;i<solver.labels.size();i++){
-			if( solver.labels[i]==1 ){
-				cout << i << " ";
+		//Main Loop
+		map<int, int> tighten_list;
+		for(int iter=0; iter<=num_tighten; iter++){
+			//solve the convex program
+			GDMMsolve solver(documents, labels, dim, lambda, rho);
+			solver.solve();
+			
+			//Dump current Hidden Variable Assignments
+			char fname[FNAME_LEN];
+			sprintf(fname, "beta_assign.t%d", iter);
+			writeHiddenAssign(fname, labels, solver.beta_act, tighten_list);
+			dumpHiddenDist(cerr, labels, solver.beta_act, 5);
+			
+			map<int, SparseVec>& beta_act = solver.beta_act;
+			//select most confident hidden assignment
+			double max_val = -1e300;
+			int max_i, max_h;
+			for(int i=0;i<m;i++){
+				if( labels[i] != 1 || documents[i].size()==1 )
+					continue;
 				SparseVec& beta_act_i = beta_act[i];
-				sort(beta_act_i.begin(), beta_act_i.end(), PairValueComp());
-				int k=0;
-				for(SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end() && k<5; it++,k++)
-					cout << it->first << ":" << it->second << " ";
-				cout << endl;
-				
-				fout << beta_act_i[0].first << endl;
+				for(SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end(); it++)
+					if( it->second > max_val ){
+						max_val = it->second;
+						max_h = it->first;
+						max_i = i;
+					}
 			}
+			//clamp the selected hidden assignment
+			tighten_list[max_i] = max_h;
+			Document doc;
+			doc.push_back( documents[max_i][max_h] );
+			documents[max_i] = doc;
+			cerr << "clamp i=" << max_i << ", h=" << max_h << " w/ confidence=" << max_val << endl;
+			cerr << "tighten_list: ";
+			printMap(cerr, tighten_list);
+			cerr << endl;
 		}
-		fout.close();
-		
-		writeModel( "model_init", solver.w, kernel_type );
 		
 		return 0;
 }
