@@ -11,6 +11,7 @@ int main(int argc, char** argv){
 	char*  modelfname = argv[2];
 	
 	vector<double> w;
+	//model must be read before data to ensure wordIndMap is constructed by model
 	readModel( modelfname, w );
 	vector<Document> docs;
 	vector<int> labels;

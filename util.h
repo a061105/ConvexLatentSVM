@@ -370,3 +370,57 @@ double PSWM_kernel(Sentence& s1, Sentence& s2){
 SparseVec (*feaVect)(Sentence&) = PSWMfeaVect;
 //double (*kernel)(Sentence&, Sentence&) = BOW_kernel;
 double (*kernel)(Sentence&, Sentence&) = PSWM_kernel;
+
+void writeModel(char* fname, vector<double>& w, int fea_option){
+
+	ofstream fout(fname);
+	fout << "feature_type: " <<  fea_option << endl;
+	fout << w.size() << endl;
+	for(int i=0;i<w.size();i++)
+		fout << w[i] << " ";
+	fout << endl;
+	
+	map<string,int>::iterator it;
+	for(it=wordIndMap.begin(); it!=wordIndMap.end(); it++)
+		fout << it->first << " " << it->second << endl;
+
+	fout.close();
+}
+
+void readModel(char* fname, vector<double>& w){
+	
+	ifstream fin(fname);
+	if( fin.fail() ){
+		cerr << "fail to read " << fname << endl;
+		fin.close();
+	}
+	
+	string tmp;
+	int fea_type;
+	fin >> tmp >> fea_type;
+	if( fea_type == 0 ){
+		feaVect = BOWfeaVect;
+	}else if( fea_type == 1 ){
+		feaVect = PSWMfeaVect;
+	}else{
+		cerr << "[error]: No such feature option: " << fea_type << endl;
+		exit(0);
+	}
+
+	int D;
+	fin >> D;
+	w.resize(D);
+	double wi;
+	for(int i=0;i<D;i++){
+		fin >> wi;
+		w[i] = wi;
+	}
+	
+	string word;
+	int ind;
+	for(int i=0;i<D;i++){
+		fin >> word >> ind;
+		wordIndMap[word] = ind;
+	}
+	fin.close();
+}
