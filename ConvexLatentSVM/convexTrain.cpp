@@ -65,20 +65,17 @@ class GDMMsolve{
 	double train_start_time;
 	double train_end_time;
 
-	GDMMsolve(char* input_file, double _lambda, double _rho){
+	GDMMsolve(vector<Document>& docs, vector<int>& labs, int _dim, double _lambda, double _rho){
 		
-		readData(input_file,    documents, labels );
+		documents = docs;
+		labels = labs;
+		dim = _dim;
+
 		m = documents.size();
 		voc_size = wordIndMap.size();
 		
 		lambda = _lambda*m;
 		rho = _rho/m;
-		
-		if( kernel == BOW_kernel ){
-			dim = voc_size;
-		}else if( kernel == PSWM_kernel ){
-			dim = voc_size*documents[0][0].size();
-		}
 		
 		//collect positive indexes
 		for(int i=0;i<m;i++)
@@ -727,17 +724,23 @@ int main(int argc, char** argv){
 		double lambda = atof(argv[2]);
 		double rho = atof(argv[3]);
 		int kernel_type = atoi(argv[4]);
+		
+		vector<Document> documents;
+		vector<int> labels;
+		readData(input_file,    documents, labels );
+		int voc_size = wordIndMap.size();
+		int dim;
 		if( kernel_type == 0 ){
 			kernel = BOW_kernel;
 			feaVect = BOWfeaVect;
+			dim = voc_size;
 		}else{
 			kernel = PSWM_kernel;
 			feaVect = PSWMfeaVect;
+			dim = voc_size*documents[0][0].size();
 		}
 		
-
-		GDMMsolve solver(input_file, lambda, rho);
-		
+		GDMMsolve solver(documents, labels, dim, lambda, rho);
 		solver.solve();
 		
 		ofstream fout("beta_assign");
@@ -748,7 +751,7 @@ int main(int argc, char** argv){
 				SparseVec& beta_act_i = beta_act[i];
 				sort(beta_act_i.begin(), beta_act_i.end(), PairValueComp());
 				int k=0;
-				for(SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end() && k<10; it++,k++)
+				for(SparseVec::iterator it=beta_act_i.begin(); it!=beta_act_i.end() && k<5; it++,k++)
 					cout << it->first << ":" << it->second << " ";
 				cout << endl;
 				
@@ -758,20 +761,6 @@ int main(int argc, char** argv){
 		fout.close();
 		
 		writeModel( "model_init", solver.w, kernel_type );
-		
-		/*map<pair<int,int>, SparseVec>& omega_act = solver.omega_act;
-		int num_pos = solver.pos_size;
-		int num = solver.m;
-		int T = solver.documents[0].size();
-		for(int i=0;i<num_pos;i++){
-			for(int j=0;j<num;j++){
-				SparseVec& omega_act_ij = omega_act[make_pair(i,j)];
-				cout << "omega-" << i << "-" << j << "= " ;
-				for( SparseVec::iterator it=omega_act_ij.begin(); it!=omega_act_ij.end(); it++)
-					cout << "(" << (it->first/T) << "," << (it->first%T) << "):" << it->second << " ";
-				cout << endl;
-			}
-		}*/
 		
 		return 0;
 }
