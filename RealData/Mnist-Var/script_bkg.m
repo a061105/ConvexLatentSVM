@@ -4,18 +4,21 @@ H = 28;
 W = 28;
 dim = W*H;
 truncate_thd = 1e-2;
-rotate_interval = 30;
-num_rotate = ceil(360/rotate_interval)-1;
+
+W_bg = 50;
+H_bg = 50;
+trans_interval = 5;
+num_window_height = floor((H_bg-H)/trans_interval);
+
 %output names
-svm_train_fname = ['mnist_rot.' num2str(pos_label) 'vs' num2str(neg_label) '.train'];
-svm_test_fname = ['mnist_rot.' num2str(pos_label) 'vs' num2str(neg_label) '.test'];
+svm_train_fname = ['mnist_bg.' num2str(pos_label) 'vs' num2str(neg_label) '.train'];
+svm_test_fname = ['mnist_bg.' num2str(pos_label) 'vs' num2str(neg_label) '.test'];
 latentsvm_train_fname = [svm_train_fname '.latent'];
 latentsvm_test_fname = [svm_test_fname '.latent'];
 
-A = load('mnist_all_rotation_normalized_float_train_valid.amat');
-A_train = A(1:500,:);
-A_test = A(501:end,:);
-%A_test = load('mnist_all_rotation_normalized_float_test.amat');
+A = load('mnist_background_random_train.amat');
+A_train = A(1:250,:);
+A_test = A(251:1000,:);
 
 y_tr = A_train(:,end); %ignore validation for now
 y_ts = A_test(:,end);
@@ -33,13 +36,17 @@ y_1vs1_tr = [ ones(nnz(y_tr==pos_label),1); -ones(nnz(y_tr==neg_label),1) ];
 y_1vs1_ts = [ ones(nnz(y_ts==pos_label),1); -ones(nnz(y_ts==neg_label),1) ];
 
 % write original data in libsvm format
-libsvmwrite(svm_train_fname, y_1vs1_tr, sparse(X_1vs1_tr));
-libsvmwrite(svm_test_fname, y_1vs1_ts, sparse(X_1vs1_ts));
+%libsvmwrite(svm_train_fname, y_1vs1_tr, sparse(X_1vs1_tr));
+%libsvmwrite(svm_test_fname, y_1vs1_ts, sparse(X_1vs1_ts));
 
 % create data with different hidden rotations (to be discovered by LatentSVM model)
 X_list = {X_1vs1_tr, X_1vs1_ts};
 y_list = {y_1vs1_tr, y_1vs1_ts};
 fname_list = {latentsvm_train_fname, latentsvm_test_fname};
+fpos_list = {[latentsvm_train_fname '.pos'], [latentsvm_test_fname '.pos']};
+%X_list = {X_1vs1_ts};
+%y_list = {y_1vs1_ts};
+%fname_list = {latentsvm_test_fname};
 
 for k = 1:length(X_list)
 	X = X_list{k};
@@ -47,16 +54,22 @@ for k = 1:length(X_list)
 	N = size(X,1);
 	
 	fname = fname_list{k}
+	fpos_name = fpos_list{k};
 	fp = fopen(fname,'w');
+	fp_pos = fopen(fpos_name, 'w');
 	fprintf(fp, '%d\n', N);
 	for i = 1:N
 		fprintf(fp, '%d, ', y(i));
 		
 		img = reshape(X(i,:), [W H]);
-		for j = 0:num_rotate
-			write_x_libsvm( fp, reshape(img,[1 dim]), truncate_thd);
-			fprintf(fp, ' . ');
-			img = imrotate(img, rotate_interval, 'bilinear', 'crop');
+		[img_bg, pos] = add_background(img, W_bg, H_bg);
+		fprintf(fp_pos,'%d\n', (pos(2)-1)*num_window_height+pos(1));
+		for w = 1:trans_interval:W_bg-W
+			for h=1:trans_interval:H_bg-H
+				
+				write_x_libsvm( fp, reshape(img_bg(w+1:w+W, h+1:h+H),[1 dim]), truncate_thd);
+				fprintf(fp, ' . ');
+			end
 		end
 		fprintf(fp,'\n');
 	end
