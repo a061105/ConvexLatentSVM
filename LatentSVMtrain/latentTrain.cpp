@@ -30,6 +30,7 @@ void exit_with_help(){
 	cerr << "feature options:" << endl;
 	cerr << "	0: bag-of-word" << endl;
 	cerr << "	1: position-specific weight matrix" << endl;
+	cerr << "	2: linear" << endl;
 	exit(0);
 }
 
@@ -90,11 +91,14 @@ int main(int argc, char** argv){
 	
 	int dim;
 	if( param->fea_option == 0 ){
-		dim = voc_size;
 		feaVect = BOWfeaVect;
+		dim = voc_size;
 	}else if( param->fea_option == 1 ){
 		feaVect = PSWMfeaVect;
 		dim = voc_size*docs[0][0].size();
+	}else if( param->fea_option == 2 ){
+		feaVect = linearFeaVect;
+		dim = voc_size;
 	}else{
 		cerr << "[error]: No such feature option: " << param->fea_option << endl;
 		exit(0);

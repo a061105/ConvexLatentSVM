@@ -251,7 +251,6 @@ int getIndex( string& token ){
 Sentence parse_sentence( string token ){
 	
 	Sentence sen;
-
 	vector<string> tokens = split( token, " " );
 	for(int i=0;i<tokens.size();i++){
 		
@@ -295,7 +294,7 @@ void readData(char* input_fname,  vector<Document>& documents, vector<int>& labe
 		
 		//split doc
 		string doc = tokens[1];
-		tokens = split(doc, ".");
+		tokens = split(doc, ". ");
 		for(int j=0;j<tokens.size();j++)
 			documents[i].push_back( parse_sentence(tokens[j]) );
 	}
@@ -349,6 +348,11 @@ SparseVec PSWMfeaVect( Sentence& sen ){
 	return phi;
 }
 
+SparseVec linearFeaVect( Sentence& sen ){
+	
+	return sen;
+}
+
 
 double BOW_kernel(Sentence& s1, Sentence& s2){//assume s1 and s2 are sorted and collapsed
 	
@@ -387,6 +391,31 @@ double PSWM_kernel(Sentence& s1, Sentence& s2){
 	}
 	return count/len;
 	//return count;
+}
+
+double linear_kernel(Sentence& s1, Sentence& s2){//assume s1 and s2 are sorted and collapsed
+	
+	sort(s1.begin(), s1.end(), PairIndexComp());
+	sort(s2.begin(), s2.end(), PairIndexComp());
+	
+	double prod=0.0;
+	int i=0,j=0;
+	while( i<s1.size() && j<s2.size() ){
+
+		if( s1[i].first == s2[j].first ){
+			prod += 1.0;
+			i++;
+			j++;
+		}else if( s1[i].first < s2[j].first ){
+			i++;
+		}else{
+			j++;
+		}
+	}
+	double s1_size = (double) s1.size();
+	double s2_size = (double) s2.size();
+	
+	return  ((double)prod);
 }
 
 

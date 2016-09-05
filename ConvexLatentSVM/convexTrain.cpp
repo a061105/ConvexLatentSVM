@@ -751,6 +751,7 @@ int main(int argc, char** argv){
 			cerr << "kernel options:" << endl;
 			cerr << "	0: Bag-of-word" << endl;
 			cerr << "	1: PSWM" << endl;
+			cerr << "	2: Linear" << endl;
 			exit(0);
 		}
 
@@ -770,10 +771,14 @@ int main(int argc, char** argv){
 			kernel = BOW_kernel;
 			feaVect = BOWfeaVect;
 			dim = voc_size;
-		}else{
+		}else if( kernel_type==1 ){
 			kernel = PSWM_kernel;
 			feaVect = PSWMfeaVect;
 			dim = voc_size*documents[0][0].size();
+		}else{
+			kernel = linear_kernel;
+			feaVect = linearFeaVect;
+			dim = voc_size;
 		}
 		
 		//Main Loop
@@ -787,7 +792,7 @@ int main(int argc, char** argv){
 			char fname[FNAME_LEN];
 			sprintf(fname, "beta_assign.t%d", iter);
 			writeHiddenAssign(fname, labels, solver.beta_act, tighten_list);
-			dumpHiddenDist(cerr, labels, solver.beta_act, 5);
+			//dumpHiddenDist(cerr, labels, solver.beta_act, 5);
 			
 			map<int, SparseVec>& beta_act = solver.beta_act;
 			//select most confident hidden assignment
