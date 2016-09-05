@@ -6,3 +6,4 @@
 !*.sh
 !*.py
 !/.gitignore
+!*.m

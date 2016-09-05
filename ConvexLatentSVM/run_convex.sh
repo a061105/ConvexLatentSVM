@@ -1,12 +1,24 @@
 #!/bin/bash
 
 dir=../SimulatedData/
-train_data=$dir/docs.train
-test_data=$dir/docs.test
+train_data=$dir/docs-n20-T100
+test_data=$dir/docs-n20-T100
 
+num_tighten_iter=0
+feature_option=0
+rho=0.01
+lambda=10
 
-#./convexTrain $train_data 10 0.01 0
-#../LatentSVMtrain/latentTrain -h beta_assign $train_data 10.0 40 0 
-../LatentSVMtrain/latentTrain -h $dir/keypos.train $train_data 10.0 1 0 
-#../LatentSVMtrain/latentTrain -w model_init $train_data 10.0 2 0 
-../LatentSVMtrain/predict $test_data model
+C=10.0
+cccp_iter=40
+
+./convexTrain $train_data  $lambda  $rho  $feature_option  $num_tighten_iter
+#for t in $(seq 0 ${num_tighten_iter}) 
+#do
+#	../LatentSVMtrain/latentTrain -h beta_assign.t${t} $train_data  $C  1  $feature_option
+#	../LatentSVMtrain/predict $test_data model
+#	../LatentSVMtrain/latentTrain -h beta_assign.t${t} $train_data  $C  $cccp_iter  $feature_option
+#	../LatentSVMtrain/predict $test_data model
+#done
+
+#../LatentSVMtrain/latentTrain -h $dir/keypos.train $train_data $C 1 $feature_option 

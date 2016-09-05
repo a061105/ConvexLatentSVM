@@ -14,7 +14,7 @@ lambda=10
 C=10.0
 cccp_iter=40
 
-#./convexTrain $train_data  $lambda  $rho  $feature_option  $num_tighten_iter
+./convexTrain $train_data  $lambda  $rho  $feature_option  $num_tighten_iter
 for t in $(seq 0 ${num_tighten_iter}) 
 do
 	../LatentSVMtrain/latentTrain -h beta_assign.t${t} $train_data  $C  1  $feature_option

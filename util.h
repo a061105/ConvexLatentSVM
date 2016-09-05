@@ -9,10 +9,10 @@
 #include <cassert>
 using namespace std;
 
-typedef vector<int> Sentence;
+typedef vector<pair<int,double> > Sentence;
 typedef vector<Sentence> Document;
 typedef vector<pair<int,double> > SparseVec;
-const int FNAME_LEN = 100;
+const int FNAME_LEN = 1000;
 
 class ScoreComp{
 	public:
@@ -22,6 +22,13 @@ class ScoreComp{
 		}
 		bool operator()(const int& ind1, const int& ind2){
 			return (*score)[ind1] > (*score)[ind2];
+		}
+};
+
+class PairIndexComp{
+	public:
+		bool operator()(const pair<int,double>& it1, const pair<int,double>& it2){
+			return it1.first < it2.first;
 		}
 };
 
@@ -251,11 +258,36 @@ Sentence parse_sentence( string token ){
 		if( tokens[i] == "" )
 			continue;
 		
-		int word = getIndex( tokens[i] );
-		sen.push_back(word);
+		int word;
+		double val;
+		if( tokens[i].find(":") == string::npos ){
+			word = getIndex(tokens[i]);
+			val = 1.0;
+		}else{
+			vector<string> ind_val = split(tokens[i],":");
+			word = getIndex(ind_val[0]);
+			val = atof(ind_val[1].c_str());
+		}
+		sen.push_back(make_pair(word, val));
 	}
 
 	return sen;
+}
+
+void collapse(Sentence& sen){
+	
+	sort(sen.begin(), sen.end(), PairIndexComp() );
+	Sentence sen2 = Sentence();
+	int last = -1;
+	for(Sentence::iterator it=sen.begin(); it!=sen.end(); it++){
+		if( it->first == last )
+			sen2.back().second += it->second;
+		else
+			sen2.push_back(make_pair(it->first,it->second));
+		
+		last = it->first;
+	}
+	sen = sen2;
 }
 
 void readData(char* input_fname,  vector<Document>& documents, vector<int>& labels){
@@ -291,6 +323,12 @@ void readData(char* input_fname,  vector<Document>& documents, vector<int>& labe
 	for(map<string,int>::iterator it=wordIndMap.begin(); it!=wordIndMap.end(); it++){
 		wordMap[it->second] = it->first;
 	}
+
+	//sort and collapse sentence (so it becomee SparseVec format)
+	for(int i=0;i<nDoc;i++)
+		for(int j=0;j<documents[i].size();j++)
+			collapse(documents[i][j]);
+	
 }
 
 
@@ -301,11 +339,11 @@ SparseVec BOWfeaVect( Sentence& sen ){
 	SparseVec phi;
 	int last = -1;
 	for(Sentence::iterator it=sen.begin(); it!=sen.end(); it++){
-		int word = *it;
+		int word = it->first;
 		if( word == last ){
-			phi.back().second += 1.0;
+			phi.back().second += it->second;
 		}else{
-			phi.push_back( make_pair(word,1.0) );
+			phi.push_back( make_pair(word,it->second) );
 		}
 		last = word;
 	}
@@ -325,31 +363,26 @@ SparseVec PSWMfeaVect( Sentence& sen ){
 	double len = (double)sen.size();
 	double sqr_len = sqrt(len);
 	for(int i=0;i<sen.size();i++){
-		int word = sen[i];
-		phi.push_back( make_pair( i*voc_size + word, 1.0/sqr_len ) );
-		//phi.push_back( make_pair( i*voc_size + word, 1.0 ) );
+		int word = sen[i].first;
+		phi.push_back( make_pair( i*voc_size + word, sen[i].second/sqr_len ) );
+		//phi.push_back( make_pair( i*voc_size + word, sen[i].second ) );
 	}
 	
 	return phi;
 }
 
 
-double BOW_kernel(Sentence& s1, Sentence& s2){
+double BOW_kernel(Sentence& s1, Sentence& s2){//assume s1 and s2 are sorted and collapsed
 	
-	
-	///SparseVec Inner Product
-	sort(s1.begin(), s1.end());
-	sort(s2.begin(), s2.end());
-	
-	int num_common=0;
+	double prod=0.0;
 	int i=0,j=0;
 	while( i<s1.size() && j<s2.size() ){
 
-		if( s1[i] == s2[j] ){
-			num_common++;
+		if( s1[i].first == s2[j].first ){
+			prod += s1[i].second*s2[j].second;
 			i++;
 			j++;
-		}else if( s1[i] < s2[j] ){
+		}else if( s1[i].first < s2[j].first ){
 			i++;
 		}else{
 			j++;
@@ -357,8 +390,10 @@ double BOW_kernel(Sentence& s1, Sentence& s2){
 	}
 	double s1_size = (double) s1.size();
 	double s2_size = (double) s2.size();
-
-	return  ((double)num_common/sqrt(s1_size*s2_size));
+	
+	cerr << "prod=" << prod << endl;
+	exit(0);
+	return  ((double)prod/sqrt(s1_size*s2_size));
 }
 
 
@@ -366,10 +401,10 @@ double PSWM_kernel(Sentence& s1, Sentence& s2){
 	
 	assert(s1.size()==s2.size());
 	int len = s1.size();
-	int count=0;
+	double count=0.0;
 	for(int i=0;i<len;i++){
-		if( s1[i]==s2[i] )
-			count++;
+		if( s1[i].first==s2[i].first )
+			count+=s1[i].second*s2[i].second;
 	}
 	return (double)count/len;
 	//return (double)count;
