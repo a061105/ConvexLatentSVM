@@ -274,22 +274,6 @@ Sentence parse_sentence( string token ){
 	return sen;
 }
 
-void collapse(Sentence& sen){
-	
-	sort(sen.begin(), sen.end(), PairIndexComp() );
-	Sentence sen2 = Sentence();
-	int last = -1;
-	for(Sentence::iterator it=sen.begin(); it!=sen.end(); it++){
-		if( it->first == last )
-			sen2.back().second += it->second;
-		else
-			sen2.push_back(make_pair(it->first,it->second));
-		
-		last = it->first;
-	}
-	sen = sen2;
-}
-
 void readData(char* input_fname,  vector<Document>& documents, vector<int>& labels){
 
 	ifstream fin(input_fname);
@@ -323,12 +307,6 @@ void readData(char* input_fname,  vector<Document>& documents, vector<int>& labe
 	for(map<string,int>::iterator it=wordIndMap.begin(); it!=wordIndMap.end(); it++){
 		wordMap[it->second] = it->first;
 	}
-
-	//sort and collapse sentence (so it becomee SparseVec format)
-	for(int i=0;i<nDoc;i++)
-		for(int j=0;j<documents[i].size();j++)
-			collapse(documents[i][j]);
-	
 }
 
 
@@ -374,12 +352,15 @@ SparseVec PSWMfeaVect( Sentence& sen ){
 
 double BOW_kernel(Sentence& s1, Sentence& s2){//assume s1 and s2 are sorted and collapsed
 	
+	sort(s1.begin(), s1.end(), PairIndexComp());
+	sort(s2.begin(), s2.end(), PairIndexComp());
+
 	double prod=0.0;
 	int i=0,j=0;
 	while( i<s1.size() && j<s2.size() ){
 
 		if( s1[i].first == s2[j].first ){
-			prod += s1[i].second*s2[j].second;
+			prod += 1.0;
 			i++;
 			j++;
 		}else if( s1[i].first < s2[j].first ){
@@ -391,8 +372,6 @@ double BOW_kernel(Sentence& s1, Sentence& s2){//assume s1 and s2 are sorted and 
 	double s1_size = (double) s1.size();
 	double s2_size = (double) s2.size();
 	
-	cerr << "prod=" << prod << endl;
-	exit(0);
 	return  ((double)prod/sqrt(s1_size*s2_size));
 }
 
@@ -404,10 +383,10 @@ double PSWM_kernel(Sentence& s1, Sentence& s2){
 	double count=0.0;
 	for(int i=0;i<len;i++){
 		if( s1[i].first==s2[i].first )
-			count+=s1[i].second*s2[i].second;
+			count += 1.0;
 	}
-	return (double)count/len;
-	//return (double)count;
+	return count/len;
+	//return count;
 }
 
 
