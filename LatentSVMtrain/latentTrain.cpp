@@ -1,21 +1,19 @@
 #include "latentSVM.h"
 
-void readGivenH(char* fname, vector<int>& h){
+void readGivenH(char* fname, vector<int>& h, vector<int>& pos_index ){
 	
 	ifstream fin(fname);
 	if( fin.fail() ){
 		cerr << "file " << fname << " not found." << endl;
 		exit(0);
 	}
-	int doc_ind, h_val;
-	
+
+	int h_val;
 	int i=0;
-	while( !fin.eof() ){
+	for(int i=0;i<pos_index.size();i++){
 		fin >> h_val;
-		if( !fin.eof() ){
-			h[i] = h_val;
-			i++;
-		}
+		h[pos_index[i]] = h_val;
+		i++;
 	}
 }
 
@@ -83,9 +81,17 @@ int main(int argc, char** argv){
 	vector<Document> docs;
 	vector<int> labels;
 	readData( param->train_doc_fpath, docs, labels );
-	
+	vector<int> pos_index, neg_index;
+	for(int i=0;i<labels.size();i++){
+		if( labels[i]==1 )
+			pos_index.push_back(i);
+		else
+			neg_index.push_back(i);
+	}
 	int N = docs.size();
 	cerr << "num of docs=" << N << endl;
+	cerr << "num of pos=" << pos_index.size() << endl;
+	cerr << "num of neg=" << neg_index.size() << endl;
 	int voc_size = wordIndMap.size();
 	cerr << "|voc|=" << voc_size << endl;
 	
@@ -110,12 +116,11 @@ int main(int argc, char** argv){
 	
 	vector<int> h;
 	h.resize( N );
-	for(int i=0;i<N;i++){
-		if( labels[i] == 1 )
-			h[i] = rand()%( docs[i].size() );
+	for(vector<int>::iterator it=pos_index.begin(); it!=pos_index.end(); it++){
+		h[*it] = rand()%( docs[*it].size() );
 	}
 	if( param->init_h_fpath != NULL ){
-		readGivenH( param->init_h_fpath , h );
+		readGivenH( param->init_h_fpath , h , pos_index );
 	}
 	
 	//// Generate xi for i \in negative
