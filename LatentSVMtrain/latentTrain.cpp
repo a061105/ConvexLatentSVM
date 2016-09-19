@@ -13,7 +13,6 @@ void readGivenH(char* fname, vector<int>& h, vector<int>& pos_index ){
 	for(int i=0;i<pos_index.size();i++){
 		fin >> h_val;
 		h[pos_index[i]] = h_val;
-		cerr << pos_index[i] <<", "<<h_val << endl;
 	}
 }
 
