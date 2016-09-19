@@ -81,7 +81,7 @@ void trainSVM(vector<SparseVec>& data_pos, vector<vector<SparseVec> >& data_neg,
 		index.push_back(i);
 	shuffle(index);
 
-	int max_iter = 1000;
+	int max_iter = 100;
 	int iter=0;
 	while(iter < max_iter){
 		

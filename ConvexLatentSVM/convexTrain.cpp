@@ -483,8 +483,8 @@ class GDMMsolve{
 					int h_h2 = it2->first;
 					int h = h_h2/Tj;
 					int h2 = h_h2 % Tj;
-					mu_ij[h_h2] += 0.01*max( it2->second - alpha_j[h2] , 0.0);
-					nu_ij[h_h2] += 0.01*max( it2->second - beta_i[h], 0.0 );
+					mu_ij[h_h2] += 0.001*max( it2->second - alpha_j[h2] , 0.0);
+					nu_ij[h_h2] += 0.001*max( it2->second - beta_i[h], 0.0 );
 				}
 			}
 			

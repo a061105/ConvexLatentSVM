@@ -6,8 +6,8 @@ dim = W*H;
 truncate_thd = 1e-4;
 noise_level = 1e-1;
 
-W_bg = 100;
-H_bg = 100;
+W_bg = 50;
+H_bg = 50;
 trans_interval = 5;
 num_window_height = floor((H_bg-H)/trans_interval);
 
@@ -20,7 +20,7 @@ latentsvm_test_fname = [svm_test_fname '.latent'];
 %A = load('mnist_background_random_train.amat');
 A = load('mnist_train.amat');
 A_train = A(1:250,:);
-A_test = A(250:750,:);
+A_test = A(251:500,:);
 
 y_tr = A_train(:,end); %ignore validation for now
 y_ts = A_test(:,end);
@@ -76,7 +76,7 @@ for k = 1:length(X_list)
 		for w = 1:trans_interval:W_bg-W+1
 			for h=1:trans_interval:H_bg-H+1
 				x = reshape(img_bg(w:w+W-1, h:h+H-1), [1,dim]);
-				x = x / sqrt(754);
+				%x = x / sqrt(754);
 				write_x_libsvm( fp, x, truncate_thd);
 				fprintf(fp, ' . ');
 				
@@ -94,14 +94,17 @@ for k = 1:length(X_list)
 		%h = argmin_pos(2);
 		%x = reshape(img_bg(w:w+W-1, h:h+H-1), [1,dim]);
 		x = reshape(img_bg(:,:), [1,W_bg*H_bg]);
-		x = x / sqrt(754);
+		%x = x / sqrt(754);
 		write_x_libsvm( fp2, x, truncate_thd );
 		
 		fprintf(fp_pos, '%d\n', argmin_count);
 		
-		%imshow(img_bg(argmin_pos(1):argmin_pos(1)+W-1, argmin_pos(2):argmin_pos(2)+H-1));
-		%saveas(gcf, ['~/public_html/tmp/mnist_bg/' num2str(i) '.pdf'],'pdf');
-		
+		if mod(i,10) == 0
+			%imshow(img_bg(argmin_pos(1):argmin_pos(1)+W-1, argmin_pos(2):argmin_pos(2)+H-1));
+			imshow(img_bg);
+			saveas(gcf, ['~/public_html/tmp/mnist_bg/' num2str(i) '.pdf'],'pdf');
+		end
+
 		fprintf(fp,'\n');
 		fprintf(fp2,'\n');
 	end
