@@ -1,13 +1,13 @@
-pos_label = 2;
-neg_label = 3;
+pos_label = 0;
+neg_label = 1;
 H = 28;
 W = 28;
 dim = W*H;
-truncate_thd = 1e-2;
+truncate_thd = 1e-4;
 
-W_bg = 50;
-H_bg = 50;
-trans_interval = 5;
+W_bg = 35;
+H_bg = 35;
+trans_interval = 2;
 num_window_height = floor((H_bg-H)/trans_interval);
 
 %output names
@@ -17,8 +17,8 @@ latentsvm_train_fname = [svm_train_fname '.latent'];
 latentsvm_test_fname = [svm_test_fname '.latent'];
 
 A = load('mnist_background_random_train.amat');
-A_train = A(1:250,:);
-A_test = A(251:1000,:);
+A_train = A(1:1500,:);
+A_test = A(1500:3000,:);
 
 y_tr = A_train(:,end); %ignore validation for now
 y_ts = A_test(:,end);
@@ -36,8 +36,8 @@ y_1vs1_tr = [ ones(nnz(y_tr==pos_label),1); -ones(nnz(y_tr==neg_label),1) ];
 y_1vs1_ts = [ ones(nnz(y_ts==pos_label),1); -ones(nnz(y_ts==neg_label),1) ];
 
 % write original data in libsvm format
-%libsvmwrite(svm_train_fname, y_1vs1_tr, sparse(X_1vs1_tr));
-%libsvmwrite(svm_test_fname, y_1vs1_ts, sparse(X_1vs1_ts));
+libsvmwrite(svm_train_fname, y_1vs1_tr, sparse(X_1vs1_tr));
+libsvmwrite(svm_test_fname, y_1vs1_ts, sparse(X_1vs1_ts));
 
 % create data with different hidden rotations (to be discovered by LatentSVM model)
 X_list = {X_1vs1_tr, X_1vs1_ts};
@@ -56,21 +56,49 @@ for k = 1:length(X_list)
 	fname = fname_list{k}
 	fpos_name = fpos_list{k};
 	fp = fopen(fname,'w');
+	fp2 = fopen([fname '-2'],'w');
 	fp_pos = fopen(fpos_name, 'w');
 	fprintf(fp, '%d\n', N);
+	fprintf(fp2, '%d\n', N);
 	for i = 1:N
 		fprintf(fp, '%d, ', y(i));
+		fprintf(fp2, '%d, ', y(i));
 		
 		img = reshape(X(i,:), [W H]);
 		[img_bg, pos] = add_background(img, W_bg, H_bg);
-		fprintf(fp_pos,'%d\n', (pos(2)-1)*num_window_height+pos(1));
-		for w = 1:trans_interval:W_bg-W
-			for h=1:trans_interval:H_bg-H
-				
-				write_x_libsvm( fp, reshape(img_bg(w+1:w+W, h+1:h+H),[1 dim]), truncate_thd);
+		
+		min_dist = inf;
+		argmin_count = -1;
+		argmin_pos = -1;
+		count = 0;
+		for w = 1:trans_interval:W_bg-W+1
+			for h=1:trans_interval:H_bg-H+1
+				x = reshape(img_bg(w:w+W-1, h:h+H-1), [1,dim]);
+				%x = x / sqrt(755);
+				write_x_libsvm( fp, x, truncate_thd);
 				fprintf(fp, ' . ');
+				
+				dist_to_gt = norm([w-pos(1), h-pos(2)]);
+				if dist_to_gt < min_dist 
+					min_dist = dist_to_gt;
+					argmin_count = count;
+					argmin_pos = [w,h];
+				end
+				count = count + 1;
 			end
 		end
+		
+		w = argmin_pos(1);
+		h = argmin_pos(2);
+		x = reshape(img_bg(w:w+W-1, h:h+H-1), [1,dim]);
+		write_x_libsvm( fp2, x, truncate_thd );
+		
+		fprintf(fp_pos, '%d\n', argmin_count);
+		
+		%imshow(img_bg(argmin_pos(1)+1:argmin_pos(1)+W, argmin_pos(2)+1:argmin_pos(2)+H));
+		%saveas(gcf, ['~/public_html/tmp/mnist_bg/' num2str(i) '.pdf'],'pdf');
+		
 		fprintf(fp,'\n');
+		fprintf(fp2,'\n');
 	end
 end
