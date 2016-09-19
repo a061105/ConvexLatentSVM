@@ -4,10 +4,11 @@ H = 28;
 W = 28;
 dim = W*H;
 truncate_thd = 1e-4;
+noise_level = 1e-1;
 
-W_bg = 35;
-H_bg = 35;
-trans_interval = 2;
+W_bg = 100;
+H_bg = 100;
+trans_interval = 5;
 num_window_height = floor((H_bg-H)/trans_interval);
 
 %output names
@@ -16,9 +17,10 @@ svm_test_fname = ['mnist_bg.' num2str(pos_label) 'vs' num2str(neg_label) '.test'
 latentsvm_train_fname = [svm_train_fname '.latent'];
 latentsvm_test_fname = [svm_test_fname '.latent'];
 
-A = load('mnist_background_random_train.amat');
-A_train = A(1:1500,:);
-A_test = A(1500:3000,:);
+%A = load('mnist_background_random_train.amat');
+A = load('mnist_train.amat');
+A_train = A(1:250,:);
+A_test = A(250:750,:);
 
 y_tr = A_train(:,end); %ignore validation for now
 y_ts = A_test(:,end);
@@ -59,13 +61,13 @@ for k = 1:length(X_list)
 	fp2 = fopen([fname '-2'],'w');
 	fp_pos = fopen(fpos_name, 'w');
 	fprintf(fp, '%d\n', N);
-	fprintf(fp2, '%d\n', N);
+	%fprintf(fp2, '%d\n', N);
 	for i = 1:N
 		fprintf(fp, '%d, ', y(i));
-		fprintf(fp2, '%d, ', y(i));
+		fprintf(fp2, '%d ', y(i));
 		
 		img = reshape(X(i,:), [W H]);
-		[img_bg, pos] = add_background(img, W_bg, H_bg);
+		[img_bg, pos] = add_background(img, W_bg, H_bg, noise_level);
 		
 		min_dist = inf;
 		argmin_count = -1;
@@ -74,7 +76,7 @@ for k = 1:length(X_list)
 		for w = 1:trans_interval:W_bg-W+1
 			for h=1:trans_interval:H_bg-H+1
 				x = reshape(img_bg(w:w+W-1, h:h+H-1), [1,dim]);
-				%x = x / sqrt(755);
+				x = x / sqrt(754);
 				write_x_libsvm( fp, x, truncate_thd);
 				fprintf(fp, ' . ');
 				
@@ -88,14 +90,16 @@ for k = 1:length(X_list)
 			end
 		end
 		
-		w = argmin_pos(1);
-		h = argmin_pos(2);
-		x = reshape(img_bg(w:w+W-1, h:h+H-1), [1,dim]);
+		%w = argmin_pos(1);
+		%h = argmin_pos(2);
+		%x = reshape(img_bg(w:w+W-1, h:h+H-1), [1,dim]);
+		x = reshape(img_bg(:,:), [1,W_bg*H_bg]);
+		x = x / sqrt(754);
 		write_x_libsvm( fp2, x, truncate_thd );
 		
 		fprintf(fp_pos, '%d\n', argmin_count);
 		
-		%imshow(img_bg(argmin_pos(1)+1:argmin_pos(1)+W, argmin_pos(2)+1:argmin_pos(2)+H));
+		%imshow(img_bg(argmin_pos(1):argmin_pos(1)+W-1, argmin_pos(2):argmin_pos(2)+H-1));
 		%saveas(gcf, ['~/public_html/tmp/mnist_bg/' num2str(i) '.pdf'],'pdf');
 		
 		fprintf(fp,'\n');

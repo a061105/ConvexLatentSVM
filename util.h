@@ -403,7 +403,7 @@ double linear_kernel(Sentence& s1, Sentence& s2){//assume s1 and s2 are sorted a
 	while( i<s1.size() && j<s2.size() ){
 
 		if( s1[i].first == s2[j].first ){
-			prod += 1.0;
+			prod += s1[i].second*s2[j].second;
 			i++;
 			j++;
 		}else if( s1[i].first < s2[j].first ){
@@ -415,7 +415,7 @@ double linear_kernel(Sentence& s1, Sentence& s2){//assume s1 and s2 are sorted a
 	double s1_size = (double) s1.size();
 	double s2_size = (double) s2.size();
 	
-	return  ((double)prod);
+	return  ((double)prod)/s1_size;
 }
 
 
@@ -455,6 +455,8 @@ void readModel(char* fname, vector<double>& w){
 		feaVect = BOWfeaVect;
 	}else if( fea_type == 1 ){
 		feaVect = PSWMfeaVect;
+	}else if( fea_type == 2 ){
+		feaVect = linearFeaVect;	
 	}else{
 		cerr << "[error]: No such feature option: " << fea_type << endl;
 		exit(0);

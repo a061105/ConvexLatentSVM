@@ -1,10 +1,10 @@
 pos_label = 2;
-neg_label = 3;
+neg_label = 5;
 H = 28;
 W = 28;
 dim = W*H;
 truncate_thd = 1e-2;
-rotate_interval = 30;
+rotate_interval = 10;
 num_rotate = ceil(360/rotate_interval)-1;
 %output names
 svm_train_fname = ['mnist_rot.' num2str(pos_label) 'vs' num2str(neg_label) '.train'];
@@ -14,7 +14,7 @@ latentsvm_test_fname = [svm_test_fname '.latent'];
 
 A = load('mnist_all_rotation_normalized_float_train_valid.amat');
 A_train = A(1:500,:);
-A_test = A(501:end,:);
+A_test = A(501:1000,:);
 %A_test = load('mnist_all_rotation_normalized_float_test.amat');
 
 y_tr = A_train(:,end); %ignore validation for now

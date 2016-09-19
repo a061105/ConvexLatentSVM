@@ -1,6 +1,6 @@
-function [img2, pos] = add_background(img, W_bg, H_bg)
+function [img2, pos] = add_background(img, W_bg, H_bg, noise_level)
 
-img2 = rand(W_bg, H_bg);
+img2 = rand(W_bg, H_bg)*noise_level;
 [W,H] = size(img);
 
 x = ceil(rand*(W_bg-W));
