@@ -13,7 +13,7 @@ void readGivenH(char* fname, vector<int>& h, vector<int>& pos_index ){
 	for(int i=0;i<pos_index.size();i++){
 		fin >> h_val;
 		h[pos_index[i]] = h_val;
-		i++;
+		cerr << pos_index[i] <<", "<<h_val << endl;
 	}
 }
 
@@ -83,10 +83,11 @@ int main(int argc, char** argv){
 	readData( param->train_doc_fpath, docs, labels );
 	vector<int> pos_index, neg_index;
 	for(int i=0;i<labels.size();i++){
-		if( labels[i]==1 )
+		if( labels[i]==1 ){
 			pos_index.push_back(i);
-		else
+		}else{
 			neg_index.push_back(i);
+		}
 	}
 	int N = docs.size();
 	cerr << "num of docs=" << N << endl;
